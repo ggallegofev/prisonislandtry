@@ -129,6 +129,20 @@ svg { width: 100%; height: 100%; overflow: visible; }
   pointer-events: none; z-index: 9999;
   box-shadow: 0 8px 30px rgba(0,0,0,0.7);
 }
+#col-detail {
+  display: none; position: fixed;
+  background: #141414; border: 1px solid #2a2a2a;
+  border-radius: 8px; padding: 13px 16px;
+  z-index: 9998; min-width: 200px; max-width: 280px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.7);
+  font-size: 11px; color: #bbb;
+}
+#col-detail h4 { margin: 0 0 10px; font-size: 12px; color: #fff; font-weight: 600; }
+#col-detail table { border-collapse: collapse; width: 100%; }
+#col-detail td { padding: 3px 0; vertical-align: middle; }
+#col-detail td.num { text-align: right; padding-left: 12px; font-variant-numeric: tabular-nums; }
+#col-detail td.pct { text-align: right; padding-left: 6px; color: #555; font-variant-numeric: tabular-nums; }
+#col-detail .close-hint { margin-top: 10px; font-size: 10px; color: #444; text-align: right; }
 .tt-row { display: flex; gap: 8px; }
 .tt-k { color: #555; min-width: 78px; flex-shrink: 0; font-size: 11px; }
 .tt-v { color: #ddd; }
@@ -151,6 +165,7 @@ svg { width: 100%; height: 100%; overflow: visible; }
   <div id="chart-wrap"><svg id="chart"></svg></div>
 </div>
 <div id="tooltip"></div>
+<div id="col-detail"></div>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
 const RAW = __DATA__;
@@ -373,15 +388,52 @@ function computeColumns(dimKey) {
   }));
 }
 
+// ── Column detail popup ───────────────────────────────────────────────────────
+const colDetailEl = document.getElementById("col-detail");
+function showColDetail(colVal, groupDim, effDim, pageX, pageY) {
+  const colNodes = nodes.filter(d => d[groupDim.field] === colVal);
+  const n = colNodes.length; if (!n) return;
+  const breakDim = effDim !== groupDim ? effDim : groupDim;
+  const present = breakDim.order.filter(v => v !== "—" && colNodes.some(d => d[breakDim.field] === String(v)));
+  const rows = present.map(v => {
+    const c = colNodes.filter(d => d[breakDim.field] === String(v)).length;
+    const pct = Math.round(c / n * 100);
+    const col = breakDim.colors[String(v)] || "#888";
+    return `<tr>
+      <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col};margin-right:7px;flex-shrink:0"></span>${v}</td>
+      <td class="num">${c}</td><td class="pct">${pct}%</td>
+    </tr>`;
+  }).join("");
+  colDetailEl.innerHTML =
+    `<h4>${colVal} <span style="font-weight:400;color:#555">n=${n}</span></h4>` +
+    `<table>${rows}</table>` +
+    `<div class="close-hint">click anywhere to close</div>`;
+  const pw = 240;
+  let left = pageX + 14;
+  if (left + pw > window.innerWidth - 8) left = pageX - pw - 14;
+  colDetailEl.style.left = left + "px";
+  colDetailEl.style.display = "block";
+  const ph = colDetailEl.offsetHeight;
+  let top = pageY - 20;
+  if (top + ph > window.innerHeight - 8) top = pageY - ph + 20;
+  colDetailEl.style.top = Math.max(8, top) + "px";
+}
+function hideColDetail() { colDetailEl.style.display = "none"; }
+document.addEventListener("click", e => {
+  if (!colDetailEl.contains(e.target)) hideColDetail();
+});
+
 // ── Column label renderer (filter-aware) ─────────────────────────────────────
-let colState = null; // { cols, dim }
+let colState = null; // { cols, dim, eff }
 function updateColLabels() {
   svg.selectAll(".col-label").remove();
   if (!colState) return;
-  const { cols, dim } = colState;
+  const { cols, dim, eff } = colState;
   const pool = (filterVal !== null) ? nodes.filter(d => d[filterField] === filterVal) : nodes;
   const validTotal = cols.filter(({val}) => val !== "—")
     .reduce((s, {val}) => s + pool.filter(d => d[dim.field] === val).length, 0);
+  // Column spacing for hit areas
+  const spacing = cols.length > 1 ? Math.abs(cols[1].x - cols[0].x) : 120;
   cols.forEach(({val, x}) => {
     const count = pool.filter(d => d[dim.field] === val).length;
     if (val !== "—" && validTotal > 0) {
@@ -397,12 +449,23 @@ function updateColLabels() {
     svg.append("text").attr("class","col-label")
       .attr("x",x).attr("y",H-28).attr("text-anchor","middle")
       .attr("fill","#999999").attr("font-size","12px")
+      .style("cursor","pointer")
       .text(sl(val));
+    // Invisible click rect over label area
+    svg.append("rect").attr("class","col-label")
+      .attr("x", x - spacing * 0.44).attr("y", H - 96)
+      .attr("width", spacing * 0.88).attr("height", 80)
+      .attr("fill","transparent").style("cursor","pointer")
+      .on("click", (event) => {
+        event.stopPropagation();
+        showColDetail(val, dim, eff || dim, event.pageX, event.pageY);
+      });
   });
 }
 
 // ── Go (apply grouping) ──────────────────────────────────────────────────────
 function go() {
+  hideColDetail();
   const cols = computeColumns(groupKey);
   const xFor = Object.fromEntries(cols.map(c => [c.val, c.x]));
   nodes.forEach(d => { d.targetX = xFor[d[DIM_MAP[groupKey].field]] ?? W / 2; });
@@ -412,7 +475,8 @@ function go() {
   sim.alpha(1.0).restart();
 
   recolor();
-  colState = { cols, dim: DIM_MAP[groupKey] };
+  const eff = colorKey ? DIM_MAP[colorKey] : DIM_MAP[groupKey];
+  colState = { cols, dim: DIM_MAP[groupKey], eff };
   updateColLabels();
   refreshGroupBtns(); refreshColorBtns(); renderLegend(); updateNarrative();
 }
@@ -594,6 +658,13 @@ svg { width: 100%; height: 100%; overflow: visible; }
 
 /* ── Tooltip ─────────────────────────────────────────────── */
 #tooltip { position: fixed; display: none; background: rgba(10,12,20,0.97); border: 1px solid #282828; border-radius: 8px; padding: 10px 14px; font-size: 12px; line-height: 1.85; max-width: 255px; pointer-events: none; z-index: 9999; box-shadow: 0 8px 28px rgba(0,0,0,0.7); }
+#col-detail { display: none; position: fixed; background: #141414; border: 1px solid #2a2a2a; border-radius: 8px; padding: 13px 16px; z-index: 9998; min-width: 200px; max-width: 280px; max-height: 80vh; overflow-y: auto; box-shadow: 0 6px 24px rgba(0,0,0,0.7); font-size: 11px; color: #bbb; }
+#col-detail h4 { margin: 0 0 10px; font-size: 12px; color: #fff; font-weight: 600; }
+#col-detail table { border-collapse: collapse; width: 100%; }
+#col-detail td { padding: 3px 0; vertical-align: middle; }
+#col-detail td.num { text-align: right; padding-left: 12px; font-variant-numeric: tabular-nums; }
+#col-detail td.pct { text-align: right; padding-left: 6px; color: #555; font-variant-numeric: tabular-nums; }
+#col-detail .close-hint { margin-top: 10px; font-size: 10px; color: #444; text-align: right; }
 .tt-row { display: flex; gap: 8px; }
 .tt-k { color: #555; min-width: 78px; flex-shrink: 0; font-size: 11px; }
 .tt-v { color: #ddd; }
@@ -628,6 +699,7 @@ svg { width: 100%; height: 100%; overflow: visible; }
   <div id="chart-wrap"><svg id="chart"></svg></div>
 </div>
 <div id="tooltip"></div>
+<div id="col-detail"></div>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
@@ -638,38 +710,44 @@ const SLIDES = [
   {
     title: "258 people",
     sub: "6 cities · does the name get in the way?",
-    body: "Respondents across New York, Los Angeles, Chicago, Denver, Dallas and Cincinnati were shown the Prison Island concept and asked to compare it head-to-head against an alternative name.",
+    body: "Experience-goers across New York, Los Angeles, Chicago, Denver, Dallas and Cincinnati were shown the Prison Island concept and asked to rate it — then compare it against an alternative name. Each dot is one person.",
     group: null, color: "city",
   },
   {
     title: "Where they're from",
-    sub: null,
-    body: "Chicago leads the sample, with Denver and Los Angeles close behind. Each city contributes meaningfully — no single market dominates the story.",
+    sub: "No single market dominates",
+    body: "Chicago leads the sample, with Denver and Los Angeles close behind. The spread matters: this is not a coastal read or a Midwest read. It is a broad, multi-market picture.",
     group: "city", color: "age",
   },
   {
     title: "Who they are",
-    sub: null,
-    body: "The 35–44 band accounts for nearly a third of all respondents. These are regular experience-goers: concerts, cinema, immersive events, museums. Exactly the audience Prison Island is built for.",
+    sub: "Coloured by how they voted in the head-to-head",
+    body: "The 35–44 band is the largest group — and the core audience for an experience like this. They are regular concert-goers, cinema-goers, escape room players. The name lands with people who already buy this kind of thing.",
     group: "age", color: "pi_vs_brk",
   },
   {
     title: "First impressions",
-    sub: "Likelihood to attend, rated 1–5",
-    body: "BRKThrough and Prison Island were tested with separate groups — each name rated cold, before any comparison. Both names land around a 3 out of 5. Neither triggers strong resistance; neither generates runaway enthusiasm.",
+    sub: "Likelihood to attend, rated 1–5 · separate groups · no comparison yet",
+    body: "Each group saw only one name, cold. Prison Island and BRKThrough both land around 3 out of 5. Neither name excites. Neither name repels. The starting point is the same.",
     dual: { left:"brk_pi_rate", leftLabel:"BRKThrough", right:"pi_rate", rightLabel:"Prison Island" },
   },
   {
     title: "Head to head",
     sub: "After seeing both names",
-    body: "45% call it a draw. 29% prefer Prison Island. 26% prefer BRKThrough. There is no outrage. No name generates a runaway lead.",
+    body: "45% call it a draw. 29% lean Prison Island. 26% lean BRKThrough. No name generates a runaway lead. No name generates a backlash. The split is as close to a tie as survey data gets.",
     group: "pi_vs_brk", color: null,
   },
   {
     title: "The age cut",
-    sub: "Grouped by age · coloured by preference",
-    body: "The 35–44 cohort — the largest group — leans toward Prison Island when forced to choose. The 25–34 group tilts slightly toward BRKThrough. Differences are real but not dramatic.",
+    sub: "Does preference shift by generation?",
+    body: "The 35–44 cohort — the biggest group, the target audience — leans toward Prison Island when forced to choose. Younger respondents tilt slightly toward BRKThrough. The differences are real but not dramatic. No age group is a dealbreaker for either name.",
     group: "age", color: "pi_vs_brk",
+  },
+  {
+    title: "The verdict",
+    sub: "No case against Prison Island",
+    body: "The name does not get in the way. Tested cold against a purpose-built alternative, Prison Island held its ground. No city turned against it. No age group rejected it. The core audience leans its way. Renaming carries cost and uncertainty — this data does not justify either. A deeper probe may yet change the picture. But on this evidence: run as Prison Island.",
+    group: null, color: "pi_vs_brk",
   },
   {
     title: "Explore the data",
@@ -889,15 +967,49 @@ function goDual(leftField, leftLabel, rightField, rightLabel, filterField) {
   legendEl.insertBefore(hdr, legendEl.firstChild);
 }
 
+// ── Column detail popup ───────────────────────────────────────────────────────
+const colDetailEl = document.getElementById("col-detail");
+function showColDetail(colVal, groupDim, effDim, pageX, pageY) {
+  const colNodes = nodes.filter(d => d[groupDim.field] === colVal);
+  const n = colNodes.length; if (!n) return;
+  const breakDim = effDim !== groupDim ? effDim : groupDim;
+  const present = breakDim.order.filter(v => v !== "—" && colNodes.some(d => d[breakDim.field] === String(v)));
+  const rows = present.map(v => {
+    const c = colNodes.filter(d => d[breakDim.field] === String(v)).length;
+    const pct = Math.round(c / n * 100);
+    const col = breakDim.colors[String(v)] || "#888";
+    return `<tr>
+      <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col};margin-right:7px"></span>${v}</td>
+      <td class="num">${c}</td><td class="pct">${pct}%</td>
+    </tr>`;
+  }).join("");
+  colDetailEl.innerHTML =
+    `<h4>${colVal} <span style="font-weight:400;color:#555">n=${n}</span></h4>` +
+    `<table>${rows}</table>` +
+    `<div class="close-hint">click anywhere to close</div>`;
+  const pw = 240;
+  let left = pageX + 14;
+  if (left + pw > window.innerWidth - 8) left = pageX - pw - 14;
+  colDetailEl.style.left = left + "px";
+  colDetailEl.style.display = "block";
+  const ph = colDetailEl.offsetHeight;
+  let top = pageY - 20;
+  if (top + ph > window.innerHeight - 8) top = pageY - ph + 20;
+  colDetailEl.style.top = Math.max(8, top) + "px";
+}
+function hideColDetail() { colDetailEl.style.display = "none"; }
+document.addEventListener("click", e => { if (!colDetailEl.contains(e.target)) hideColDetail(); });
+
 // ── Column label renderer (filter-aware) ─────────────────────────────────────
 let colState = null;
 function updateColLabels() {
   svg.selectAll(".col-label").remove();
   if (!colState) return;
-  const { cols, dim } = colState;
+  const { cols, dim, eff } = colState;
   const pool = (filterVal !== null) ? nodes.filter(d => d[filterField] === filterVal) : nodes;
   const validTotal = cols.filter(({val}) => val !== "—")
     .reduce((s, {val}) => s + pool.filter(d => d[dim.field] === val).length, 0);
+  const spacing = cols.length > 1 ? Math.abs(cols[1].x - cols[0].x) : 120;
   cols.forEach(({val, x}) => {
     const count = pool.filter(d => d[dim.field] === val).length;
     if (val !== "—" && validTotal > 0) {
@@ -913,13 +1025,23 @@ function updateColLabels() {
     svg.append("text").attr("class","col-label")
       .attr("x",x).attr("y",H-28).attr("text-anchor","middle")
       .attr("fill","#999999").attr("font-size","12px")
+      .style("cursor","pointer")
       .text(sl(val));
+    svg.append("rect").attr("class","col-label")
+      .attr("x", x - spacing*0.44).attr("y", H-96)
+      .attr("width", spacing*0.88).attr("height", 80)
+      .attr("fill","transparent").style("cursor","pointer")
+      .on("click", (event) => {
+        event.stopPropagation();
+        showColDetail(val, dim, eff||dim, event.pageX, event.pageY);
+      });
   });
 }
 
 // ── Beeswarm go / idle ───────────────────────────────────────────────────────
 function go(gKey, cKey) {
   if (dualSim) teardownDual();
+  hideColDetail();
   groupKey = gKey; colorKey = cKey || null;
   if (!W) return;
   const dim = DIM_MAP[gKey];
@@ -933,7 +1055,7 @@ function go(gKey, cKey) {
   const eff = DIM_MAP[colorKey] || dim;
   circles.transition().duration(1100).ease(d3.easeCubicInOut)
     .attr("fill", d => eff.colors[d[eff.field]] || "#888").attr("fill-opacity",0.88);
-  colState = { cols: present.map((v,i) => ({ val: String(v), x: n===1?W/2:pad+(i/(n-1))*usable })), dim };
+  colState = { cols: present.map((v,i) => ({ val: String(v), x: n===1?W/2:pad+(i/(n-1))*usable })), dim, eff };
   updateColLabels();
   renderLegend(eff);
 }
