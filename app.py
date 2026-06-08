@@ -644,16 +644,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .leg-pct { margin-left: auto; color: #aaa; font-size: 10px; font-variant-numeric: tabular-nums; }
 
 /* ── Nav ─────────────────────────────────────────────────── */
-#nav { display: flex; align-items: center; gap: 10px; padding-top: 14px; margin-top: 14px; border-top: 1px solid #161616; flex-shrink: 0; }
-.nav-btn { background: none; border: 1px solid #1e1e1e; border-radius: 5px; color: #404040; font-size: 16px; cursor: pointer; width: 28px; height: 26px; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s, color 0.15s; user-select: none; }
-.nav-btn:hover:not([disabled]) { border-color: #666; color: #ccc; }
-.nav-btn[disabled] { opacity: 0.15; cursor: default; }
+#nav { display: flex; align-items: center; gap: 12px; padding-top: 14px; margin-top: 14px; border-top: 1px solid #161616; flex-shrink: 0; }
+.nav-btn { background: #111318; border: 1px solid #2e2e2e; border-radius: 8px; color: #888; font-size: 18px; cursor: pointer; width: 40px; height: 36px; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s, color 0.15s, background 0.15s; user-select: none; }
+.nav-btn:hover:not([disabled]) { border-color: #888; color: #eee; background: #1a1a20; }
+.nav-btn[disabled] { opacity: 0.18; cursor: default; }
+#nav-hint { font-size: 9px; color: #2a2a2a; letter-spacing: .08em; text-transform: uppercase; flex-shrink: 0; }
 #progress { display: flex; gap: 6px; flex: 1; justify-content: center; align-items: center; }
 .pdot { width: 5px; height: 5px; border-radius: 50%; background: #222; cursor: pointer; transition: background 0.25s, transform 0.25s; }
 .pdot.on { background: #777; transform: scale(1.35); }
 
 /* ── Chart area ─────────────────────────────────────────── */
-#chart-wrap { flex: 1; position: relative; }
+#chart-wrap { flex: 1; position: relative; overflow: hidden; }
 svg { width: 100%; height: 100%; overflow: visible; }
 
 /* ── Tooltip ─────────────────────────────────────────────── */
@@ -694,6 +695,7 @@ svg { width: 100%; height: 100%; overflow: visible; }
       <button class="nav-btn" id="prev-btn">&#8592;</button>
       <div id="progress"></div>
       <button class="nav-btn" id="next-btn">&#8594;</button>
+      <span id="nav-hint">&#8592;&#8594; keys</span>
     </div>
   </div>
   <div id="chart-wrap"><svg id="chart"></svg></div>
@@ -1343,15 +1345,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .leg-sw { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .leg-pct { margin-left: auto; color: #aaa; font-size: 10px; font-variant-numeric: tabular-nums; }
 
-#nav { display: flex; align-items: center; gap: 10px; padding-top: 14px; margin-top: 14px; border-top: 1px solid #161616; flex-shrink: 0; }
-.nav-btn { background: none; border: 1px solid #1e1e1e; border-radius: 5px; color: #404040; font-size: 16px; cursor: pointer; width: 28px; height: 26px; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s, color 0.15s; user-select: none; }
-.nav-btn:hover:not([disabled]) { border-color: #666; color: #ccc; }
-.nav-btn[disabled] { opacity: 0.15; cursor: default; }
+#nav { display: flex; align-items: center; gap: 12px; padding-top: 14px; margin-top: 14px; border-top: 1px solid #161616; flex-shrink: 0; }
+.nav-btn { background: #111318; border: 1px solid #2e2e2e; border-radius: 8px; color: #888; font-size: 18px; cursor: pointer; width: 40px; height: 36px; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s, color 0.15s, background 0.15s; user-select: none; }
+.nav-btn:hover:not([disabled]) { border-color: #888; color: #eee; background: #1a1a20; }
+.nav-btn[disabled] { opacity: 0.18; cursor: default; }
+#nav-hint { font-size: 9px; color: #2a2a2a; letter-spacing: .08em; text-transform: uppercase; flex-shrink: 0; }
 #progress { display: flex; gap: 6px; flex: 1; justify-content: center; align-items: center; }
 .pdot { width: 5px; height: 5px; border-radius: 50%; background: #222; cursor: pointer; transition: background 0.25s, transform 0.25s; }
 .pdot.on { background: #777; transform: scale(1.35); }
 
-#chart-wrap { flex: 1; position: relative; }
+#chart-wrap { flex: 1; position: relative; overflow: hidden; }
 svg { width: 100%; height: 100%; overflow: visible; }
 
 #tooltip { position: fixed; display: none; background: rgba(10,12,20,0.97); border: 1px solid #282828; border-radius: 8px; padding: 10px 14px; font-size: 12px; line-height: 1.85; max-width: 255px; pointer-events: none; z-index: 9999; box-shadow: 0 8px 28px rgba(0,0,0,0.7); }
@@ -1403,6 +1406,7 @@ svg { width: 100%; height: 100%; overflow: visible; }
       <button class="nav-btn" id="prev-btn">&#8592;</button>
       <div id="progress"></div>
       <button class="nav-btn" id="next-btn">&#8594;</button>
+      <span id="nav-hint">&#8592;&#8594; keys</span>
     </div>
   </div>
   <div id="chart-wrap">
@@ -2084,6 +2088,7 @@ function go(gKey,cKey) {
   const n=present.length, pad=55, usable=W-pad*2;
   const xFor=Object.fromEntries(present.map((v,i)=>[String(v),n===1?W/2:pad+(i/(n-1))*usable]));
   nodes.forEach(d=>{d.tx=xFor[d[dim.field]]??W/2;});
+  const eff=DIM_MAP[colorKey]||dim;
   sim.force("x").x(d=>d.tx).strength(0.09);
   sim.force("y").y(H*.44).strength(0.055);
   sim.alpha(1.0).restart();
