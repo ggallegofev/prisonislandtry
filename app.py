@@ -713,7 +713,7 @@ const SLIDES = [
     title: "258 people",
     sub: "6 cities · does the name get in the way?",
     body: "Experience-goers across New York, Los Angeles, Chicago, Denver, Dallas and Cincinnati were shown the Prison Island concept and asked to rate it — then compare it against an alternative name. Each dot is one person.",
-    group: null, color: "city",
+    group: null, color: "city", hideLegend: true,
   },
   {
     title: "Where they're from",
@@ -1217,6 +1217,7 @@ function showSlide(idx) {
     if(s.dual) goDual(s.dual.left, s.dual.leftLabel, s.dual.right, s.dual.rightLabel, s.dual.filterField||null);
     else if(s.group) go(s.group, s.color||null);
     else idle(s.color||null);
+    if(s.hideLegend) legendEl.innerHTML="";
   }
 
   document.getElementById("prev-btn").disabled=(current===0);
@@ -1429,13 +1430,30 @@ const FREQ_ORDER    = ["More than once a week","Once a week","Every other week",
 const RATE_ORDER    = ["1","2","3","4","5","—"];
 const PI_BRK_ORDER  = ["BRKThrough is much better","BRKThrough is slightly better","They're about the same","Prison Island is slightly better","Prison Island is much better","—"];
 
+const REACTION_REMAP = {
+  "Don't know":                        "Don't get it",
+  "Just found out but not for me":     "Didn't know, not for me",
+  "I knew this but not for me":        "Knew it, not for me",
+  "Just found out and am interested":  "Didn't know, interested",
+  "I knew this and am interested":     "Knew it, interested",
+  "I know people who would like this": "Know people who'd enjoy this",
+  "I know people who do this":         "Know people who do this",
+  "I've done this myself in the past": "Have done this myself",
+  "Actually I really enjoy these":     "Really enjoy these",
+};
 const REACTION_ORDER = [
-  "Just found out and am interested","Actually I really enjoy these",
-  "I knew this and am interested","I've done this myself in the past",
-  "I know people who would like this","Just found out but not for me",
-  "Don't know","I knew this but not for me","I know people who do this",
+  "Don't get it",
+  "Didn't know, not for me",
+  "Knew it, not for me",
+  "Didn't know, interested",
+  "Knew it, interested",
+  "Know people who'd enjoy this",
+  "Know people who do this",
+  "Have done this myself",
+  "Really enjoy these",
 ];
-const SURVEY_GROUP_ORDER = ["PI-first","BRK-first","—"];
+const SURVEY_GROUP_ORDER = ["PI-first","BRK-first","GoG-first","BRK-vs-GoG"];
+const GOG_GROUPS = new Set(["GoG-first","BRK-vs-GoG"]);
 const CROWD_PICK_ORDER   = ["Prison Island","BRKThrough","—"];
 const PRICE_BUCKET_ORDER = ["Under $25","$25\\u201334","$35\\u201344","$45\\u201354","$55+","—"];
 
@@ -1457,12 +1475,18 @@ const COLORS = {
   rating: {"1":"#E74C3C","2":"#E67E22","3":"#F1C40F","4":"#2ECC71","5":"#16A085","—":"#1e1e1e"},
   pi_vs_brk: {"BRKThrough is much better":"#4C6EF5","BRKThrough is slightly better":"#8FA8FF","They're about the same":"#666","Prison Island is slightly better":"#FFAA66","Prison Island is much better":"#E8630A","—":"#1e1e1e"},
   reaction: {
-    "Just found out and am interested":"#4C9EF5","Actually I really enjoy these":"#2ECC71",
-    "I knew this and am interested":"#9C27B0","I've done this myself in the past":"#E8630A",
-    "I know people who would like this":"#FF9800","Just found out but not for me":"#F44336",
-    "Don't know":"#607D8B","I knew this but not for me":"#795548","I know people who do this":"#00BCD4",
+    "Don't get it":               "#4a4a4a",
+    "Didn't know, not for me":    "#c0392b",
+    "Knew it, not for me":        "#e74c3c",
+    "Didn't know, interested":    "#58d68d",
+    "Knew it, interested":        "#27ae60",
+    "Know people who'd enjoy this":"#5dade2",
+    "Know people who do this":    "#2980b9",
+    "Have done this myself":      "#8e44ad",
+    "Really enjoy these":         "#6c3483",
+    "\\u2014": "#1e1e1e",
   },
-  survey_group: {"PI-first":"#E8630A","BRK-first":"#4C6EF5","—":"#1e1e1e"},
+  survey_group: {"PI-first":"#E8630A","BRK-first":"#4C6EF5","GoG-first":"#E91E8C","BRK-vs-GoG":"#9C64D0"},
   crowd_pick:   {"Prison Island":"#E8630A","BRKThrough":"#4C6EF5","—":"#1e1e1e"},
   price_bucket: {"Under $25":"#4CAF50","$25\\u201334":"#8BC34A","$35\\u201344":"#FFCC00","$45\\u201354":"#FF9800","$55+":"#F44336","—":"#1e1e1e"},
   formats: {
@@ -1503,7 +1527,7 @@ const SLIDES = [
     title: "258 people",
     sub: "6 cities \\u00b7 leisure-goers across the US",
     body: "Experience-goers across New York, Los Angeles, Chicago, Denver, Dallas and Cincinnati were shown the Prison Island concept and asked a series of questions. Each dot is one person.",
-    group: "city", color: "city",
+    group: "city", color: "city", hideLegend: true,
   },
   {
     title: "Who they are",
@@ -1515,25 +1539,32 @@ const SLIDES = [
     title: "What they do",
     sub: "Ticketed formats attended in the last 5 years \\u00b7 multi-select",
     body: "Music, cinema, museums, and theatre top the list \\u2014 but Immersive Experiences rank fifth out of nine, ahead of nightlife and comedy. This audience is already primed for the category. Each dot is one format selection; respondents appear once per format they picked.",
-    multi: { field: "formats", order: FORMATS_ORDER, colors: COLORS.formats },
+    multi: { field: "formats", order: FORMATS_ORDER, colors: COLORS.formats, yField: "age", yOrder: AGE_ORDER },
   },
   {
     title: "First reaction",
-    sub: "Before seeing any name \\u00b7 response to the concept description",
-    body: "One third were already interested on first read. Another 8% had done this themselves. 18% were not for it or unsure. The concept generates genuine pull \\u2014 the name question starts from a position of interest, not indifference.",
-    group: "reaction", color: "reaction",
+    sub: "We described the format in words \\u2014 no name, no branding \\u2014 and asked how people felt. Columns run left to right: least interested \\u2192 most interested.",
+    body: "Over a third were already interested or enthusiastic on first read \\u2014 before any name was mentioned. A further 8% had done this themselves. Only 18% were not for it or unsure. The concept generates genuine pull; the name question starts from a position of interest, not indifference.",
+    group: "reaction", color: "reaction", yField: "age",
+  },
+  {
+    title: "How we tested it",
+    sub: "Split-group design \\u00b7 controlling for order effects",
+    body: "258 respondents were split into four groups. Orange and blue saw Prison Island vs BRKThrough \\u2014 orange saw Prison Island first, blue saw BRKThrough first. Pink and purple saw Glow or Go vs BRKThrough \\u2014 pink saw Glow or Go first, purple saw BRKThrough first. From slide 6 onwards we show only the orange and blue cohort. The Glow or Go results are a separate story.",
+    group: "survey_group", color: "survey_group",
   },
   {
     title: "So what about the name?",
     sub: "The question this survey was built to answer",
     body: "Respondents were split into two groups. One saw Prison Island first, then BRKThrough. The other saw BRKThrough first, then Prison Island. Both groups were then asked to compare. The question: does the name Prison Island get in the way?",
-    group: null, color: "survey_group",
+    group: null, color: "survey_group", piOnly: true,
   },
   {
     title: "First impressions",
     sub: "Likelihood to attend, rated 1\\u20135 \\u00b7 each group saw only one name cold",
     body: "Prison Island and BRKThrough both land around 3 out of 5. Neither name excites on its own. Neither name repels. The starting point is identical \\u2014 the name alone is not moving the needle either way.",
     dual: { left: "brk_pi_rate", leftLabel: "BRKThrough", right: "pi_rate", rightLabel: "Prison Island" },
+    piOnly: true,
   },
   {
     title: "Head to head",
@@ -1544,18 +1575,20 @@ const SLIDES = [
       { label: "PI-first",  field: "survey_group", val: "PI-first"  },
       { label: "BRK-first", field: "survey_group", val: "BRK-first" },
     ],
+    piOnly: true,
   },
   {
     title: "Wisdom of crowd",
     sub: "Which name do most people prefer? \\u00b7 n=88 who answered",
     body: "When asked to predict the crowd rather than state their own preference: 52% say BRKThrough, 48% say Prison Island. The split mirrors the head-to-head almost exactly. There is no consensus that the crowd prefers one name over the other.",
-    group: "crowd_pick", color: "city",
+    group: "crowd_pick", color: "city", piOnly: true,
   },
   {
     title: "Who do they think it\\u2019s for?",
     sub: "Audience expectations \\u00b7 multi-select \\u00b7 Prison Island vs BRKThrough",
     body: "Prison Island reads as a friends-and-adults experience \\u2014 mature groups, birthdays, work teams in that order. BRKThrough skews more toward work groups and families with kids. Prison Island n=38 respondents; BRKThrough n=125 \\u2014 the larger sample reflects more respondents in that flow.",
     dualMulti: { left: "pi_groups", leftLabel: "Prison Island", right: "brk_groups", rightLabel: "BRKThrough" },
+    piOnly: true,
   },
   {
     title: "What would they pay?",
@@ -1567,12 +1600,13 @@ const SLIDES = [
       vals: ["Under $25","$25\\u201334","$35\\u201344","$45\\u201354","$55+"],
       colors: COLORS.price_bucket,
     },
+    piOnly: true,
   },
   {
     title: "What they said",
     sub: "Open-ended responses \\u00b7 mentions of \\u2018prison\\u2019 or \\u2018name\\u2019 in orange",
     body: "Verbatim feedback from respondents who added a comment at the end of the survey.",
-    qualitative: true,
+    qualitative: true, piOnly: true,
   },
 ];
 
@@ -1589,13 +1623,15 @@ const DIMS = [
   {key:"crowd_pick",   label:"Crowd pick",   field:"crowd_pick",   order:CROWD_PICK_ORDER,   colors:COLORS.crowd_pick},
 ];
 const DIM_MAP = Object.fromEntries(DIMS.map(d => [d.key, d]));
+const Y_OMIT = new Set(["Skip question","Unknown"]);
 
 RAW.forEach(d => {
   ["pi_rate","brk_pi_rate"].forEach(f => { d[f] = d[f]===null ? "\\u2014" : String(d[f]); });
   ["pi_vs_brk"].forEach(f => { if (!d[f]||d[f]==="nan") d[f]="\\u2014"; });
   if (!d.freq||d.freq==="nan")        d.freq="Unknown";
   if (!d.reaction||d.reaction==="nan") d.reaction="\\u2014";
-  if (!d.survey_group)                 d.survey_group="\\u2014";
+  else if (REACTION_REMAP[d.reaction]) d.reaction=REACTION_REMAP[d.reaction];
+  if (!d.survey_group||d.survey_group==="\\u2014"||d.survey_group==="nan") d.survey_group="—";
   if (!d.crowd_pick||d.crowd_pick==="") d.crowd_pick="\\u2014";
   if (!Array.isArray(d.formats))       d.formats=[];
   if (!Array.isArray(d.pi_groups))     d.pi_groups=[];
@@ -1675,7 +1711,9 @@ function goDual(leftField, leftLabel, rightField, rightLabel, filterFieldArg, va
   const VALS = vals || ["1","2","3","4","5"];
   const colorLookup = colorsObj || COLORS.rating;
 
-  const pool = filterFieldArg ? nodes.filter(d => d[filterFieldArg] !== "\\u2014") : nodes;
+  const piOnly=SLIDES[current]?.piOnly;
+  const basePool = piOnly ? nodes.filter(d=>!GOG_GROUPS.has(d.survey_group)) : nodes;
+  const pool = filterFieldArg ? basePool.filter(d => d[filterFieldArg] !== "\\u2014") : basePool;
 
   const leftVNodes = pool.filter(d => d[leftField] !== "\\u2014")
     .map(d => Object.assign({}, d, {vx:0,vy:0,_vfield:leftField,_vval:d[leftField],_vlabel:leftLabel}));
@@ -1780,26 +1818,40 @@ function goDual(leftField, leftLabel, rightField, rightLabel, filterFieldArg, va
 }
 
 // ── goMultiField ──────────────────────────────────────────────────────────────
-function goMultiField(field, orderArr, colorsObj) {
+function goMultiField(field, orderArr, colorsObj, yField, yOrder) {
   hideColDetail();
   groupKey=null; colorKey=null; colState=null;
   if (!W) return;
 
-  const vNodes = [];
+  const piOnly=SLIDES[current]?.piOnly;
+  let vNodes = [];
   nodes.forEach(d => {
+    if (piOnly&&GOG_GROUPS.has(d.survey_group)) return;
     const tags = d[field];
     if (!tags||tags.length===0) return;
     tags.forEach(tag => vNodes.push(Object.assign({},d,{vx:0,vy:0,_vtag:tag,_vfield:field})));
   });
 
+  // Y axis setup (before filtering vNodes so we know which y-values are present)
+  const yTop = 28, yBottom = H - 90;
+  let yFor = null, yPresent = null;
+  if (yField && yOrder) {
+    yPresent = yOrder.filter(v => !Y_OMIT.has(v) && vNodes.some(d=>d[yField]===v)).reverse();
+    const ny = yPresent.length;
+    yFor = Object.fromEntries(yPresent.map((v,i)=>[v, ny===1?(yTop+yBottom)/2 : yTop+(i/(ny-1))*(yBottom-yTop)]));
+    vNodes = vNodes.filter(d => yFor[d[yField]] !== undefined);
+  }
+
   const present = orderArr.filter(v => vNodes.some(n=>n._vtag===v));
-  const n=present.length, pad=55, usable=W-pad*2;
-  const xFor = Object.fromEntries(present.map((v,i)=>[v, n===1?W/2:pad+(i/(n-1))*usable]));
+  const leftPad = yField ? 68 : 55, rightPad = 55;
+  const usable = W - leftPad - rightPad;
+  const xFor = Object.fromEntries(present.map((v,i)=>[v, present.length===1?leftPad+usable/2:leftPad+(i/(present.length-1))*usable]));
 
   vNodes.forEach(d => {
-    d.tx = xFor[d._vtag] ?? W/2;
+    d.tx = xFor[d._vtag] ?? leftPad+usable/2;
+    d.ty = yFor ? yFor[d[yField]] : H*.44;
     d.x  = d.tx + (Math.random()-.5)*20;
-    d.y  = H*.44 + (Math.random()-.5)*60;
+    d.y  = d.ty + (Math.random()-.5)*20;
   });
 
   circles.attr("fill-opacity",0);
@@ -1807,7 +1859,7 @@ function goMultiField(field, orderArr, colorsObj) {
   const multiCircles = svg.selectAll(".mdot").data(vNodes).join("circle")
     .attr("class","mdot").attr("r",R)
     .attr("cx",d=>d.x).attr("cy",d=>d.y)
-    .attr("fill",d=>colorsObj[d._vtag]||"#888").attr("fill-opacity",0.85)
+    .attr("fill",d=>(yField ? (DIM_MAP[yField].colors[d[yField]]||"#888") : (colorsObj[d._vtag]||"#888"))).attr("fill-opacity",0.85)
     .attr("stroke","none").style("cursor","pointer")
     .on("mouseenter",function(event,d){
       tooltipEl.innerHTML=tr("Format",d._vtag)+tr("Age",d.age)+tr("City",d.city)+tr("Reaction",d.reaction);
@@ -1824,12 +1876,27 @@ function goMultiField(field, orderArr, colorsObj) {
   multiSim = d3.forceSimulation(vNodes)
     .force("collide",d3.forceCollide(R+1.8).strength(0.8).iterations(2))
     .force("x",d3.forceX(d=>d.tx).strength(0.09))
-    .force("y",d3.forceY(H*.44).strength(0.055))
+    .force("y",d3.forceY(d=>d.ty).strength(yField ? 0.22 : 0.055))
     .alphaDecay(0.011).velocityDecay(0.30)
     .on("tick",()=>multiCircles.attr("cx",d=>d.x).attr("cy",d=>d.y));
   multiSim.alpha(1.0).restart();
 
   svg.selectAll(".col-label").remove();
+
+  // Y axis gridlines and labels
+  if (yFor && yPresent) {
+    yPresent.forEach(v => {
+      const y = yFor[v];
+      svg.append("line").attr("class","col-label")
+        .attr("x1",leftPad-4).attr("x2",W-rightPad+4).attr("y1",y).attr("y2",y)
+        .attr("stroke","#1e1e1e").attr("stroke-width",1);
+      svg.append("text").attr("class","col-label")
+        .attr("x",leftPad-10).attr("y",y+4).attr("text-anchor","end")
+        .attr("fill","#555").attr("font-size","10px").text(v);
+    });
+  }
+
+  // X column labels (bottom) — with click handler for age breakdown
   const totalV = vNodes.length;
   const totalRespondents = nodes.filter(d=>d[field]&&d[field].length>0).length;
   present.forEach(v => {
@@ -1841,21 +1908,61 @@ function goMultiField(field, orderArr, colorsObj) {
     svg.append("text").attr("class","col-label")
       .attr("x",x).attr("y",H-48).attr("text-anchor","middle")
       .attr("fill","#4a4a4a").attr("font-size","10px").text("n="+count);
-    svg.append("text").attr("class","col-label")
+    // Clickable format name
+    svg.append("text").attr("class","col-label").style("cursor", yField ? "pointer" : "default")
       .attr("x",x).attr("y",H-28).attr("text-anchor","middle")
-      .attr("fill","#999999").attr("font-size","12px").text(sl(v));
+      .attr("fill", yField ? "#aaaaaa" : "#999999").attr("font-size","12px").text(sl(v))
+      .on("click", yField ? function(event) {
+        event.stopPropagation();
+        const tagNodes = nodes.filter(d => d[field] && d[field].includes(v));
+        const n = tagNodes.length; if (!n) return;
+        const ageDim = DIM_MAP[yField];
+        const agePresent = ageDim.order.filter(a => !Y_OMIT.has(a) && tagNodes.some(d=>d[yField]===a));
+        const rows = agePresent.map(a => {
+          const c = tagNodes.filter(d=>d[yField]===a).length;
+          const pct = Math.round(c/n*100);
+          const col = ageDim.colors[a] || "#888";
+          return `<tr>
+            <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col};margin-right:7px"></span>${a}</td>
+            <td class="num">${c}</td><td class="pct">${pct}%</td>
+          </tr>`;
+        }).join("");
+        colDetailEl.innerHTML =
+          `<h4>${v} <span style="font-weight:400;color:#555">n=${n}</span></h4>` +
+          `<table>${rows}</table>` +
+          `<div class="close-hint">click anywhere to close</div>`;
+        const pw = 240;
+        let left = event.pageX + 14;
+        if (left + pw > window.innerWidth - 8) left = event.pageX - pw - 14;
+        colDetailEl.style.left = left + "px";
+        colDetailEl.style.display = "block";
+        const ph = colDetailEl.offsetHeight;
+        let top = event.pageY - 20;
+        if (top + ph > window.innerHeight - 8) top = event.pageY - ph + 20;
+        colDetailEl.style.top = Math.max(8, top) + "px";
+      } : null);
   });
 
+  // Legend: show age bands when Y axis is active, otherwise show format colours
   legendEl.innerHTML="";
   const hdr=document.createElement("div");
   hdr.style.cssText="font-size:10px;color:#555;margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase";
-  hdr.textContent=`${totalV} selections \\u00b7 ${nodes.filter(d=>d[field]&&d[field].length>0).length} respondents`;
+  hdr.textContent=`${totalV} selections \\u00b7 ${totalRespondents} respondents`;
   legendEl.appendChild(hdr);
-  present.forEach(v=>{
-    const el=document.createElement("div"); el.className="leg-item";
-    el.innerHTML=`<div class="leg-sw" style="background:${colorsObj[v]||'#888'}"></div><span>${v}</span>`;
-    legendEl.appendChild(el);
-  });
+  if (yField && yPresent) {
+    const ageDim = DIM_MAP[yField];
+    yPresent.slice().reverse().forEach(v=>{
+      const el=document.createElement("div"); el.className="leg-item";
+      el.innerHTML=`<div class="leg-sw" style="background:${ageDim.colors[v]||'#888'}"></div><span>${v}</span>`;
+      legendEl.appendChild(el);
+    });
+  } else {
+    present.forEach(v=>{
+      const el=document.createElement("div"); el.className="leg-item";
+      el.innerHTML=`<div class="leg-sw" style="background:${colorsObj[v]||'#888'}"></div><span>${v}</span>`;
+      legendEl.appendChild(el);
+    });
+  }
 }
 
 // ── goDualMulti ───────────────────────────────────────────────────────────────
@@ -1870,8 +1977,10 @@ function goDualMulti(leftField, leftLabel, rightField, rightLabel) {
   const gap=32, pad=48, midX=W/2;
   const leftUsable=midX-gap/2-pad, rightUsable=W-(midX+gap/2)-pad;
 
+  const piOnly=SLIDES[current]?.piOnly;
   const leftVNodes=[], rightVNodes=[];
   nodes.forEach(d=>{
+    if (piOnly&&GOG_GROUPS.has(d.survey_group)) return;
     (d[leftField]||[]).forEach(tag=>leftVNodes.push(Object.assign({},d,{vx:0,vy:0,_vtag:tag,_vside:"left",_vlabel:leftLabel})));
     (d[rightField]||[]).forEach(tag=>rightVNodes.push(Object.assign({},d,{vx:0,vy:0,_vtag:tag,_vside:"right",_vlabel:rightLabel})));
   });
@@ -1964,7 +2073,8 @@ function showQualitative() {
   const qw=document.getElementById("qual-wrap");
   qw.innerHTML="";
   qw.style.display="block";
-  const quotes=RAW.filter(d=>d.t_qual&&d.t_qual.length>0);
+  const piOnly=SLIDES[current]?.piOnly;
+  const quotes=RAW.filter(d=>d.t_qual&&d.t_qual.length>0&&(!piOnly||!GOG_GROUPS.has(d.survey_group)));
   if(!quotes.length){
     qw.innerHTML='<div style="color:#444;padding:40px;text-align:center">No responses recorded.</div>';
     return;
@@ -2049,7 +2159,20 @@ let colState=null;
 function updateColLabels() {
   svg.selectAll(".col-label").remove();
   if(!colState) return;
-  const {cols,dim,eff}=colState;
+  const {cols,dim,eff,yFor,yPresent}=colState;
+  // Y axis gridlines and labels
+  if(yFor&&yPresent){
+    const x0=cols[0]?.x??55, x1=cols[cols.length-1]?.x??(W-55);
+    yPresent.forEach(v=>{
+      const y=yFor[v];
+      svg.append("line").attr("class","col-label")
+        .attr("x1",x0-30).attr("x2",x1+30).attr("y1",y).attr("y2",y)
+        .attr("stroke","#1e1e1e").attr("stroke-width",1);
+      svg.append("text").attr("class","col-label")
+        .attr("x",x0-36).attr("y",y+4).attr("text-anchor","end")
+        .attr("fill","#555").attr("font-size","10px").text(v);
+    });
+  }
   const pool=(filterVal!==null)?nodes.filter(d=>d[filterField]===filterVal):nodes;
   const validTotal=cols.filter(({val})=>val!=="\\u2014").reduce((s,{val})=>s+pool.filter(d=>d[dim.field]===val).length,0);
   const spacing=cols.length>1?Math.abs(cols[1].x-cols[0].x):120;
@@ -2072,29 +2195,63 @@ function updateColLabels() {
       .attr("x",x-spacing*0.44).attr("y",H-96)
       .attr("width",spacing*0.88).attr("height",80)
       .attr("fill","transparent").style("cursor","pointer")
-      .on("click",event=>{ event.stopPropagation(); showColDetail(val,dim,eff||dim,event.pageX,event.pageY); });
+      .on("click",event=>{ event.stopPropagation(); showColDetail(val,dim,colState.yKey?DIM_MAP[colState.yKey]:(eff||dim),event.pageX,event.pageY); });
   });
+  // Direction hint for ordered scales
+  if(dim.key==="reaction"&&cols.length>1){
+    const x0=cols[0].x, x1=cols[cols.length-1].x, y=H-82;
+    svg.append("line").attr("class","col-label")
+      .attr("x1",x0-18).attr("x2",x1+18).attr("y1",y).attr("y2",y)
+      .attr("stroke","#2a2a2a").attr("stroke-width",1)
+      .attr("marker-end","url(#arrow-tip)");
+    if(!svg.select("defs #arrow-tip").node()){
+      const defs=svg.append("defs");
+      defs.append("marker").attr("id","arrow-tip").attr("markerWidth",6).attr("markerHeight",6)
+        .attr("refX",5).attr("refY",3).attr("orient","auto")
+        .append("path").attr("d","M0,0 L0,6 L6,3 z").attr("fill","#2a2a2a");
+    }
+    svg.append("text").attr("class","col-label")
+      .attr("x",x0-20).attr("y",y+4).attr("text-anchor","end")
+      .attr("fill","#333").attr("font-size","9px").attr("letter-spacing","0.05em")
+      .text("least interested");
+  }
 }
 
 // ── Beeswarm go / idle ────────────────────────────────────────────────────────
-function go(gKey,cKey) {
+function go(gKey,cKey,yKey) {
   if(dualSim) teardownDual();
   if(multiSim) teardownMulti();
   hideColDetail();
   groupKey=gKey; colorKey=cKey||null;
   if(!W) return;
+  const piOnly=SLIDES[current]?.piOnly;
+  const pool=piOnly?nodes.filter(d=>!GOG_GROUPS.has(d.survey_group)):nodes;
   const dim=DIM_MAP[gKey];
-  const present=dim.order.filter(v=>nodes.some(d=>d[dim.field]===String(v)));
-  const n=present.length, pad=55, usable=W-pad*2;
-  const xFor=Object.fromEntries(present.map((v,i)=>[String(v),n===1?W/2:pad+(i/(n-1))*usable]));
-  nodes.forEach(d=>{d.tx=xFor[d[dim.field]]??W/2;});
+  const present=dim.order.filter(v=>pool.some(d=>d[dim.field]===String(v)));
+  const leftPad=yKey?68:55, rightPad=55, usable=W-leftPad-rightPad;
+  const xFor=Object.fromEntries(present.map((v,i)=>[String(v),present.length===1?leftPad+usable/2:leftPad+(i/(present.length-1))*usable]));
+  // Y axis
+  const yTop=28, yBottom=H-90;
+  let yFor=null, yPresent=null;
+  if(yKey){
+    const yDim=DIM_MAP[yKey];
+    yPresent=yDim.order.filter(v=>!Y_OMIT.has(v)&&pool.some(d=>d[yDim.field]===v)).reverse();
+    const ny=yPresent.length;
+    yFor=Object.fromEntries(yPresent.map((v,i)=>[v,ny===1?(yTop+yBottom)/2:yTop+(i/(ny-1))*(yBottom-yTop)]));
+  }
+  nodes.forEach(d=>{
+    const gog=piOnly&&GOG_GROUPS.has(d.survey_group);
+    d.tx=gog?-200:(xFor[d[dim.field]]??leftPad+usable/2);
+    d.ty=gog?H*.44:(yFor?(yFor[d[DIM_MAP[yKey].field]]??H*.44):H*.44);
+  });
   const eff=DIM_MAP[colorKey]||dim;
   sim.force("x").x(d=>d.tx).strength(0.09);
-  sim.force("y").y(H*.44).strength(0.055);
+  sim.force("y").y(d=>d.ty).strength(yKey?0.22:0.055);
   sim.alpha(1.0).restart();
   circles.transition().duration(1100).ease(d3.easeCubicInOut)
-    .attr("fill",d=>eff.colors[d[eff.field]]||"#888").attr("fill-opacity",0.88);
-  colState={cols:present.map((v,i)=>({val:String(v),x:n===1?W/2:pad+(i/(n-1))*usable})),dim,eff};
+    .attr("fill",d=>eff.colors[d[eff.field]]||"#888")
+    .attr("fill-opacity",d=>(piOnly&&GOG_GROUPS.has(d.survey_group))?0:0.88);
+  colState={cols:present.map((v,i)=>({val:String(v),x:present.length===1?leftPad+usable/2:leftPad+(i/(present.length-1))*usable})),dim,eff,yFor,yPresent,yKey};
   updateColLabels();
   renderLegend(eff);
 }
@@ -2108,9 +2265,10 @@ function idle(cKey) {
   sim.force("y").y(H*.44).strength(0.035);
   sim.alpha(0.75).restart();
   const dim=cKey?DIM_MAP[cKey]:null;
+  const piOnly=SLIDES[current]?.piOnly;
   circles.transition().duration(900).ease(d3.easeCubicInOut)
     .attr("fill",dim?d=>(dim.colors[d[dim.field]]||"#888"):IDLE_C)
-    .attr("fill-opacity",dim?0.82:0.62);
+    .attr("fill-opacity",d=>(piOnly&&GOG_GROUPS.has(d.survey_group))?0:(dim?0.82:0.62));
   svg.selectAll(".col-label").remove();
   if(dim) renderLegend(dim); else legendEl.innerHTML="";
 }
@@ -2263,17 +2421,18 @@ function showSlide(idx) {
     } else if(s.dualMulti) {
       goDualMulti(s.dualMulti.left,s.dualMulti.leftLabel,s.dualMulti.right,s.dualMulti.rightLabel);
     } else if(s.multi) {
-      goMultiField(s.multi.field,s.multi.order,s.multi.colors);
+      goMultiField(s.multi.field,s.multi.order,s.multi.colors,s.multi.yField||null,s.multi.yOrder||null);
     } else if(s.dual) {
       goDual(s.dual.left,s.dual.leftLabel,s.dual.right,s.dual.rightLabel,
              s.dual.filterField||null,s.dual.vals||null,s.dual.colors||null);
     } else if(s.group) {
-      go(s.group,s.color||null);
+      go(s.group,s.color||null,s.yField||null);
     } else {
       idle(s.color||null);
     }
 
     if(s.filterBtns) showFilterBtns(s.filterBtns); else hideFilterBtns();
+    if(s.hideLegend) legendEl.innerHTML="";
   }
 
   document.getElementById("prev-btn").disabled=(current===0);
@@ -2305,9 +2464,9 @@ window.addEventListener("resize",()=>{
   const s=SLIDES[current];
   if(s.qualitative){showQualitative();return;}
   if(s.dualMulti) goDualMulti(s.dualMulti.left,s.dualMulti.leftLabel,s.dualMulti.right,s.dualMulti.rightLabel);
-  else if(s.multi) goMultiField(s.multi.field,s.multi.order,s.multi.colors);
+  else if(s.multi) goMultiField(s.multi.field,s.multi.order,s.multi.colors,s.multi.yField||null,s.multi.yOrder||null);
   else if(s.dual)  goDual(s.dual.left,s.dual.leftLabel,s.dual.right,s.dual.rightLabel,s.dual.filterField||null,s.dual.vals||null,s.dual.colors||null);
-  else if(s.group) go(s.group,s.color||null);
+  else if(s.group) go(s.group,s.color||null,s.yField||null);
   else             idle(s.color||null);
   if(s.filterBtns) showFilterBtns(s.filterBtns);
 });
@@ -2380,10 +2539,10 @@ def show_new_presentation(fdf):
                 return True
             except (ValueError, TypeError):
                 return False
-        if pd.notna(row.iloc[7]) and is_num(row.iloc[7]):
-            return "PI-first"
-        if pd.notna(row.iloc[9]) and is_num(row.iloc[9]):
-            return "BRK-first"
+        if pd.notna(row.iloc[7])  and is_num(row.iloc[7]):  return "PI-first"
+        if pd.notna(row.iloc[9])  and is_num(row.iloc[9]):  return "BRK-first"
+        if pd.notna(row.iloc[11]) and is_num(row.iloc[11]): return "GoG-first"
+        if pd.notna(row.iloc[13]) and is_num(row.iloc[13]): return "BRK-vs-GoG"
         return "—"
 
     def crowd_pick_val(row):
