@@ -1303,6 +1303,1142 @@ def show_presentation(fdf):
     components.html(html, height=730, scrolling=False)
 
 
+# ── New presentation component ────────────────────────────────────────────────
+
+_NEW_PRESENTATION_HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0e1117; color: #fafafa; overflow: hidden; height: 100vh; }
+#app { display: flex; height: 100vh; }
+
+#panel {
+  width: 268px; flex-shrink: 0; display: flex; flex-direction: column;
+  padding: 28px 24px 18px; border-right: 1px solid #161616; background: #090a0f;
+}
+#slide-num { font-size: 10px; color: #333; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 22px; flex-shrink: 0; }
+#text-wrap { flex: 1; min-height: 0; }
+#slide-title { font-size: 21px; font-weight: 600; color: #eee; line-height: 1.2; margin-bottom: 6px; transition: opacity 0.28s ease; }
+#slide-sub   { font-size: 11px; color: #484848; margin-bottom: 16px; transition: opacity 0.28s ease; }
+#slide-body  { font-size: 13px; color: #757575; line-height: 1.78; transition: opacity 0.28s ease; }
+
+#explore-wrap { display: none; flex: 1; flex-direction: column; gap: 11px; }
+.ctrl-row { display: flex; align-items: flex-start; gap: 6px; }
+.row-label { font-size: 10px; color: #444; letter-spacing: 0.08em; text-transform: uppercase; width: 50px; flex-shrink: 0; padding-top: 5px; }
+.btn-group { display: flex; gap: 5px; flex-wrap: wrap; }
+.dim-btn { padding: 3px 10px; border-radius: 12px; border: 1.5px solid #222; background: transparent; color: #666; font-size: 11px; cursor: pointer; transition: border-color 0.15s, color 0.15s, background 0.15s; white-space: nowrap; }
+.dim-btn:hover { border-color: #555; color: #bbb; }
+.dim-btn.active { border-color: #ccc; color: #fff; background: rgba(255,255,255,0.09); }
+.dim-btn.soft   { border-color: #3a3a3a; color: #999; background: rgba(255,255,255,0.03); }
+#color-row { display: none; }
+
+#legend-area { margin-top: 16px; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+.leg-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #777; cursor: pointer; border-radius: 4px; padding: 2px 4px; transition: background .15s; }
+.leg-item:hover { background: #1e1e1e; }
+.leg-item.leg-active { background: #222; color: #ddd; }
+.leg-item.leg-dimmed { opacity: 0.35; }
+.leg-sw { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.leg-pct { margin-left: auto; color: #aaa; font-size: 10px; font-variant-numeric: tabular-nums; }
+
+#nav { display: flex; align-items: center; gap: 10px; padding-top: 14px; margin-top: 14px; border-top: 1px solid #161616; flex-shrink: 0; }
+.nav-btn { background: none; border: 1px solid #1e1e1e; border-radius: 5px; color: #404040; font-size: 16px; cursor: pointer; width: 28px; height: 26px; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s, color 0.15s; user-select: none; }
+.nav-btn:hover:not([disabled]) { border-color: #666; color: #ccc; }
+.nav-btn[disabled] { opacity: 0.15; cursor: default; }
+#progress { display: flex; gap: 6px; flex: 1; justify-content: center; align-items: center; }
+.pdot { width: 5px; height: 5px; border-radius: 50%; background: #222; cursor: pointer; transition: background 0.25s, transform 0.25s; }
+.pdot.on { background: #777; transform: scale(1.35); }
+
+#chart-wrap { flex: 1; position: relative; }
+svg { width: 100%; height: 100%; overflow: visible; }
+
+#tooltip { position: fixed; display: none; background: rgba(10,12,20,0.97); border: 1px solid #282828; border-radius: 8px; padding: 10px 14px; font-size: 12px; line-height: 1.85; max-width: 255px; pointer-events: none; z-index: 9999; box-shadow: 0 8px 28px rgba(0,0,0,0.7); }
+#col-detail { display: none; position: fixed; background: #141414; border: 1px solid #2a2a2a; border-radius: 8px; padding: 13px 16px; z-index: 9998; min-width: 200px; max-width: 280px; max-height: 80vh; overflow-y: auto; box-shadow: 0 6px 24px rgba(0,0,0,0.7); font-size: 11px; color: #bbb; }
+#col-detail h4 { margin: 0 0 10px; font-size: 12px; color: #fff; font-weight: 600; }
+#col-detail table { border-collapse: collapse; width: 100%; }
+#col-detail td { padding: 3px 0; vertical-align: middle; }
+#col-detail td.num { text-align: right; padding-left: 12px; font-variant-numeric: tabular-nums; }
+#col-detail td.pct { text-align: right; padding-left: 6px; color: #555; font-variant-numeric: tabular-nums; }
+#col-detail .close-hint { margin-top: 10px; font-size: 10px; color: #444; text-align: right; }
+.tt-row { display: flex; gap: 8px; }
+.tt-k { color: #555; min-width: 78px; flex-shrink: 0; font-size: 11px; }
+.tt-v { color: #ddd; }
+
+/* Filter buttons */
+#filter-btn-row { position: absolute; bottom: 108px; left: 0; right: 0; display: none; justify-content: center; gap: 8px; z-index: 10; }
+.filter-btn { padding: 4px 14px; border-radius: 14px; border: 1.5px solid #2a2a2a; background: transparent; color: #666; font-size: 11px; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+.filter-btn:hover { border-color: #555; color: #bbb; }
+.filter-btn.fb-active { border-color: #aaa; color: #fff; background: rgba(255,255,255,0.09); }
+
+/* Qualitative overlay */
+#qual-wrap { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow-y: auto; padding: 28px 36px; }
+.quote-card { background: #111318; border: 1px solid #1e1e1e; border-radius: 8px; padding: 14px 18px; margin-bottom: 12px; font-size: 13px; color: #999; line-height: 1.75; }
+.quote-card .q-meta { font-size: 10px; color: #383838; margin-top: 8px; text-transform: uppercase; letter-spacing: .06em; }
+.quote-highlight { color: #E8630A; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="panel">
+    <div id="slide-num"></div>
+    <div id="text-wrap">
+      <div id="slide-title"></div>
+      <div id="slide-sub"></div>
+      <div id="slide-body"></div>
+    </div>
+    <div id="explore-wrap">
+      <div class="ctrl-row">
+        <span class="row-label">Group</span>
+        <div class="btn-group" id="group-btns"></div>
+      </div>
+      <div class="ctrl-row" id="color-row">
+        <span class="row-label">Colour</span>
+        <div class="btn-group" id="color-btns"></div>
+      </div>
+    </div>
+    <div id="legend-area"></div>
+    <div id="nav">
+      <button class="nav-btn" id="prev-btn">&#8592;</button>
+      <div id="progress"></div>
+      <button class="nav-btn" id="next-btn">&#8594;</button>
+    </div>
+  </div>
+  <div id="chart-wrap">
+    <svg id="chart"></svg>
+    <div id="qual-wrap"></div>
+    <div id="filter-btn-row"></div>
+  </div>
+</div>
+<div id="tooltip"></div>
+<div id="col-detail"></div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+const RAW = __DATA__;
+
+// ── Dimension constants ───────────────────────────────────────────────────────
+const AGE_ORDER     = ["18-24","25-34","35-44","45-54","55-64","65-74","75-84","Skip question","Unknown"];
+const CITY_ORDER    = ["New York","Los Angeles","Chicago","Denver","Dallas","Cincinnati","Unknown"];
+const FREQ_ORDER    = ["More than once a week","Once a week","Every other week","Once or twice a month","Every other month","Once or twice a year","Less than that","Unknown"];
+const RATE_ORDER    = ["1","2","3","4","5","—"];
+const PI_BRK_ORDER  = ["BRKThrough is much better","BRKThrough is slightly better","They're about the same","Prison Island is slightly better","Prison Island is much better","—"];
+
+const REACTION_ORDER = [
+  "Just found out and am interested","Actually I really enjoy these",
+  "I knew this and am interested","I've done this myself in the past",
+  "I know people who would like this","Just found out but not for me",
+  "Don't know","I knew this but not for me","I know people who do this",
+];
+const SURVEY_GROUP_ORDER = ["PI-first","BRK-first","—"];
+const CROWD_PICK_ORDER   = ["Prison Island","BRKThrough","—"];
+const PRICE_BUCKET_ORDER = ["Under $25","$25\\u201334","$35\\u201344","$45\\u201354","$55+","—"];
+
+const FORMATS_ORDER = [
+  "Music Concerts","Movies / Cinema","Exhibitions / Museums",
+  "Theatre / Performances","Immersive Experiences","Nightlife / Festivals",
+  "Comedy Shows","Sports / Competitions","Talks / Conferences",
+];
+const GROUPS_ORDER = [
+  "Young groups of friends","Mature groups of friends",
+  "Friend gatherings / Birthdays","Work groups / Teambuilding",
+  "Families (only adults)","Families (with kids)","Tourists","School trips",
+];
+
+const COLORS = {
+  age:  {"18-24":"#FF4444","25-34":"#FF7722","35-44":"#FFCC00","45-54":"#88CC00","55-64":"#00BBAA","65-74":"#4488FF","75-84":"#9966FF","Skip question":"#555","Unknown":"#555"},
+  city: {"New York":"#2196F3","Los Angeles":"#FF9800","Chicago":"#4CAF50","Denver":"#9C27B0","Dallas":"#F44336","Cincinnati":"#00BCD4","Unknown":"#9E9E9E"},
+  freq: {"More than once a week":"#FF4444","Once a week":"#FF7722","Every other week":"#FFCC00","Once or twice a month":"#88CC44","Every other month":"#44BBAA","Once or twice a year":"#4488FF","Less than that":"#9966FF","Unknown":"#555"},
+  rating: {"1":"#E74C3C","2":"#E67E22","3":"#F1C40F","4":"#2ECC71","5":"#16A085","—":"#1e1e1e"},
+  pi_vs_brk: {"BRKThrough is much better":"#4C6EF5","BRKThrough is slightly better":"#8FA8FF","They're about the same":"#666","Prison Island is slightly better":"#FFAA66","Prison Island is much better":"#E8630A","—":"#1e1e1e"},
+  reaction: {
+    "Just found out and am interested":"#4C9EF5","Actually I really enjoy these":"#2ECC71",
+    "I knew this and am interested":"#9C27B0","I've done this myself in the past":"#E8630A",
+    "I know people who would like this":"#FF9800","Just found out but not for me":"#F44336",
+    "Don't know":"#607D8B","I knew this but not for me":"#795548","I know people who do this":"#00BCD4",
+  },
+  survey_group: {"PI-first":"#E8630A","BRK-first":"#4C6EF5","—":"#1e1e1e"},
+  crowd_pick:   {"Prison Island":"#E8630A","BRKThrough":"#4C6EF5","—":"#1e1e1e"},
+  price_bucket: {"Under $25":"#4CAF50","$25\\u201334":"#8BC34A","$35\\u201344":"#FFCC00","$45\\u201354":"#FF9800","$55+":"#F44336","—":"#1e1e1e"},
+  formats: {
+    "Music Concerts":"#F44336","Movies / Cinema":"#E91E8C","Exhibitions / Museums":"#9C27B0",
+    "Theatre / Performances":"#673AB7","Immersive Experiences":"#E8630A",
+    "Nightlife / Festivals":"#FF9800","Comedy Shows":"#FFCC00",
+    "Sports / Competitions":"#4CAF50","Talks / Conferences":"#2196F3",
+  },
+  groups: {
+    "Young groups of friends":"#F44336","Mature groups of friends":"#FF9800",
+    "Friend gatherings / Birthdays":"#FFCC00","Work groups / Teambuilding":"#4CAF50",
+    "Families (only adults)":"#2196F3","Families (with kids)":"#9C27B0",
+    "Tourists":"#00BCD4","School trips":"#607D8B",
+  },
+};
+
+const SHORT = {
+  "More than once a week":">1/wk","Once a week":"1/wk","Every other week":"2x/mo",
+  "Once or twice a month":"1\\u20132/mo","Every other month":"1\\u20132/6mo",
+  "Once or twice a year":"1\\u20132/yr","Less than that":"<1/yr",
+  "BRKThrough is much better":"BRK \\u2191\\u2191","BRKThrough is slightly better":"BRK \\u2191",
+  "They're about the same":"\\u2248 same",
+  "Prison Island is slightly better":"PI \\u2191","Prison Island is much better":"PI \\u2191\\u2191",
+  "Just found out and am interested":"Interested",
+  "Actually I really enjoy these":"Already enjoy",
+  "I knew this and am interested":"Knew & interested",
+  "I've done this myself in the past":"Done this",
+  "I know people who would like this":"Know fans",
+  "Just found out but not for me":"Not for me",
+  "I knew this but not for me":"Knew, not for me",
+  "I know people who do this":"Know participants",
+};
+const sl = v => SHORT[v] || (v.length > 20 ? v.slice(0,18)+"\\u2026" : v);
+
+// ── Slides ────────────────────────────────────────────────────────────────────
+const SLIDES = [
+  {
+    title: "258 people",
+    sub: "6 cities \\u00b7 leisure-goers across the US",
+    body: "Experience-goers across New York, Los Angeles, Chicago, Denver, Dallas and Cincinnati were shown the Prison Island concept and asked a series of questions. Each dot is one person.",
+    group: "city", color: "city",
+  },
+  {
+    title: "Who they are",
+    sub: "Age distribution \\u00b7 coloured by city",
+    body: "The 35\\u201344 band is the largest cohort \\u2014 and the core audience for a physical, competitive experience. They are regular concert-goers, cinema-goers, escape room players. The 25\\u201334 group is the next largest.",
+    group: "age", color: "city",
+  },
+  {
+    title: "What they do",
+    sub: "Ticketed formats attended in the last 5 years \\u00b7 multi-select",
+    body: "Music, cinema, museums, and theatre top the list \\u2014 but Immersive Experiences rank fifth out of nine, ahead of nightlife and comedy. This audience is already primed for the category. Each dot is one format selection; respondents appear once per format they picked.",
+    multi: { field: "formats", order: FORMATS_ORDER, colors: COLORS.formats },
+  },
+  {
+    title: "First reaction",
+    sub: "Before seeing any name \\u00b7 response to the concept description",
+    body: "One third were already interested on first read. Another 8% had done this themselves. 18% were not for it or unsure. The concept generates genuine pull \\u2014 the name question starts from a position of interest, not indifference.",
+    group: "reaction", color: "reaction",
+  },
+  {
+    title: "So what about the name?",
+    sub: "The question this survey was built to answer",
+    body: "Respondents were split into two groups. One saw Prison Island first, then BRKThrough. The other saw BRKThrough first, then Prison Island. Both groups were then asked to compare. The question: does the name Prison Island get in the way?",
+    group: null, color: "survey_group",
+  },
+  {
+    title: "First impressions",
+    sub: "Likelihood to attend, rated 1\\u20135 \\u00b7 each group saw only one name cold",
+    body: "Prison Island and BRKThrough both land around 3 out of 5. Neither name excites on its own. Neither name repels. The starting point is identical \\u2014 the name alone is not moving the needle either way.",
+    dual: { left: "brk_pi_rate", leftLabel: "BRKThrough", right: "pi_rate", rightLabel: "Prison Island" },
+  },
+  {
+    title: "Head to head",
+    sub: "After seeing both names \\u00b7 coloured by which group saw which first",
+    body: "45% call it a draw. 29% lean Prison Island. 26% lean BRKThrough. No name generates a runaway lead \\u2014 and no name generates a backlash. Use the filter below to check whether order of exposure changes the result.",
+    group: "pi_vs_brk", color: "survey_group",
+    filterBtns: [
+      { label: "PI-first",  field: "survey_group", val: "PI-first"  },
+      { label: "BRK-first", field: "survey_group", val: "BRK-first" },
+    ],
+  },
+  {
+    title: "Wisdom of crowd",
+    sub: "Which name do most people prefer? \\u00b7 n=88 who answered",
+    body: "When asked to predict the crowd rather than state their own preference: 52% say BRKThrough, 48% say Prison Island. The split mirrors the head-to-head almost exactly. There is no consensus that the crowd prefers one name over the other.",
+    group: "crowd_pick", color: "city",
+  },
+  {
+    title: "Who do they think it\\u2019s for?",
+    sub: "Audience expectations \\u00b7 multi-select \\u00b7 Prison Island vs BRKThrough",
+    body: "Prison Island reads as a friends-and-adults experience \\u2014 mature groups, birthdays, work teams in that order. BRKThrough skews more toward work groups and families with kids. Prison Island n=38 respondents; BRKThrough n=125 \\u2014 the larger sample reflects more respondents in that flow.",
+    dualMulti: { left: "pi_groups", leftLabel: "Prison Island", right: "brk_groups", rightLabel: "BRKThrough" },
+  },
+  {
+    title: "What would they pay?",
+    sub: "Expected ticket price \\u00b7 Prison Island n=42 \\u00b7 BRKThrough n=129",
+    body: "Both names anchor around the $25\\u201334 band. Prison Island shows a slightly wider spread toward higher prices, but the PI sample is one-third the size of the BRK sample. The name is not dramatically repricing expectations in either direction.",
+    dual: {
+      left: "pi_price_bucket", leftLabel: "Prison Island",
+      right: "brk_price_bucket", rightLabel: "BRKThrough",
+      vals: ["Under $25","$25\\u201334","$35\\u201344","$45\\u201354","$55+"],
+      colors: COLORS.price_bucket,
+    },
+  },
+  {
+    title: "What they said",
+    sub: "Open-ended responses \\u00b7 mentions of \\u2018prison\\u2019 or \\u2018name\\u2019 in orange",
+    body: "Verbatim feedback from respondents who added a comment at the end of the survey.",
+    qualitative: true,
+  },
+];
+
+// ── DIMS / DIM_MAP ─────────────────────────────────────────────────────────────
+const DIMS = [
+  {key:"age",          label:"Age",          field:"age",          order:AGE_ORDER,         colors:COLORS.age},
+  {key:"city",         label:"City",         field:"city",         order:CITY_ORDER,         colors:COLORS.city},
+  {key:"freq",         label:"Frequency",    field:"freq",         order:FREQ_ORDER,         colors:COLORS.freq},
+  {key:"pi_rate",      label:"PI rating",    field:"pi_rate",      order:RATE_ORDER,         colors:COLORS.rating},
+  {key:"brk_pi_rate",  label:"BRK rating",   field:"brk_pi_rate",  order:RATE_ORDER,         colors:COLORS.rating},
+  {key:"pi_vs_brk",    label:"PI vs BRK",    field:"pi_vs_brk",    order:PI_BRK_ORDER,       colors:COLORS.pi_vs_brk},
+  {key:"reaction",     label:"Reaction",     field:"reaction",     order:REACTION_ORDER,     colors:COLORS.reaction},
+  {key:"survey_group", label:"Survey group", field:"survey_group", order:SURVEY_GROUP_ORDER, colors:COLORS.survey_group},
+  {key:"crowd_pick",   label:"Crowd pick",   field:"crowd_pick",   order:CROWD_PICK_ORDER,   colors:COLORS.crowd_pick},
+];
+const DIM_MAP = Object.fromEntries(DIMS.map(d => [d.key, d]));
+
+RAW.forEach(d => {
+  ["pi_rate","brk_pi_rate"].forEach(f => { d[f] = d[f]===null ? "\\u2014" : String(d[f]); });
+  ["pi_vs_brk"].forEach(f => { if (!d[f]||d[f]==="nan") d[f]="\\u2014"; });
+  if (!d.freq||d.freq==="nan")        d.freq="Unknown";
+  if (!d.reaction||d.reaction==="nan") d.reaction="\\u2014";
+  if (!d.survey_group)                 d.survey_group="\\u2014";
+  if (!d.crowd_pick||d.crowd_pick==="") d.crowd_pick="\\u2014";
+  if (!Array.isArray(d.formats))       d.formats=[];
+  if (!Array.isArray(d.pi_groups))     d.pi_groups=[];
+  if (!Array.isArray(d.brk_groups))    d.brk_groups=[];
+  if (!d.t_qual)                       d.t_qual="";
+});
+
+// ── Force simulation ──────────────────────────────────────────────────────────
+const R = 5.5, IDLE_C = "#383838";
+const nodes = RAW.map((d,i) => Object.assign({x:0,y:0,vx:0,vy:0},d,{_i:i}));
+let W, H, circles, groupKey=null, colorKey=null;
+let filterField=null, filterVal=null;
+
+const svg       = d3.select("#chart");
+const tooltipEl = document.getElementById("tooltip");
+const legendEl  = document.getElementById("legend-area");
+
+const sim = d3.forceSimulation(nodes)
+  .force("collide", d3.forceCollide(R+1.8).strength(0.8).iterations(2))
+  .force("x", d3.forceX(0).strength(0.04))
+  .force("y", d3.forceY(0).strength(0.04))
+  .alphaDecay(0.011).velocityDecay(0.30)
+  .on("tick", () => circles.attr("cx", d=>d.x).attr("cy", d=>d.y));
+
+function initChart() {
+  W = document.getElementById("chart-wrap").clientWidth;
+  H = document.getElementById("chart-wrap").clientHeight;
+  nodes.forEach(d => {
+    d.x = W/2 + (Math.random()-.5)*160;
+    d.y = H*.44 + (Math.random()-.5)*120;
+  });
+  svg.selectAll("*").remove();
+  circles = svg.selectAll(".dot").data(nodes).join("circle")
+    .attr("class","dot").attr("r",R)
+    .attr("fill",IDLE_C).attr("fill-opacity",0.62).attr("stroke","none")
+    .style("cursor","pointer")
+    .on("mouseenter",onHover).on("mousemove",e=>posTooltip(e)).on("mouseleave",onLeave);
+  sim.force("x").x(W/2).strength(0.04);
+  sim.force("y").y(H*.44).strength(0.04);
+  sim.alpha(0.75).restart();
+}
+
+// ── Dual-beeswarm state ───────────────────────────────────────────────────────
+let dualSim = null;
+
+function teardownDual() {
+  if (dualSim) { dualSim.stop(); dualSim = null; }
+  svg.selectAll(".mdot").remove();
+  circles = svg.selectAll(".dot").data(nodes).join("circle")
+    .attr("class","dot").attr("r",R)
+    .attr("fill",IDLE_C).attr("fill-opacity",0.62).attr("stroke","none")
+    .style("cursor","pointer")
+    .on("mouseenter",onHover).on("mousemove",e=>posTooltip(e)).on("mouseleave",onLeave);
+  sim.on("tick", () => circles.attr("cx", d=>d.x).attr("cy", d=>d.y));
+}
+
+// ── Multi-field beeswarm state ────────────────────────────────────────────────
+let multiSim = null;
+
+function teardownMulti() {
+  if (multiSim) { multiSim.stop(); multiSim = null; }
+  svg.selectAll(".mdot").remove();
+  circles.attr("fill-opacity", groupKey ? 0.88 : 0.62);
+  sim.on("tick", () => circles.attr("cx", d=>d.x).attr("cy", d=>d.y));
+}
+
+// ── goDual (extended with optional vals + colorsObj) ──────────────────────────
+function goDual(leftField, leftLabel, rightField, rightLabel, filterFieldArg, vals, colorsObj) {
+  groupKey = null; colorKey = null;
+  if (!W) return;
+  if (dualSim) { dualSim.stop(); dualSim = null; }
+  svg.selectAll(".col-label").remove();
+  legendEl.innerHTML = "";
+
+  const gap = 32, pad = 48;
+  const midX = W / 2;
+  const VALS = vals || ["1","2","3","4","5"];
+  const colorLookup = colorsObj || COLORS.rating;
+
+  const pool = filterFieldArg ? nodes.filter(d => d[filterFieldArg] !== "\\u2014") : nodes;
+
+  const leftVNodes = pool.filter(d => d[leftField] !== "\\u2014")
+    .map(d => Object.assign({}, d, {vx:0,vy:0,_vfield:leftField,_vval:d[leftField],_vlabel:leftLabel}));
+  const rightVNodes = pool.filter(d => d[rightField] !== "\\u2014")
+    .map(d => Object.assign({}, d, {vx:0,vy:0,_vfield:rightField,_vval:d[rightField],_vlabel:rightLabel}));
+
+  const allV = [...leftVNodes, ...rightVNodes];
+  const leftUsable  = midX - gap/2 - pad;
+  const rightUsable = W - (midX + gap/2) - pad;
+
+  const leftPresent  = VALS.filter(v => leftVNodes.some(d => d._vval === v));
+  const rightPresent = VALS.filter(v => rightVNodes.some(d => d._vval === v));
+
+  const lXFor = Object.fromEntries(leftPresent.map((v,i) =>
+    [v, pad + (leftPresent.length===1 ? leftUsable/2 : (i/(leftPresent.length-1))*leftUsable)]));
+  const rXFor = Object.fromEntries(rightPresent.map((v,i) =>
+    [v, midX+gap/2+pad + (rightPresent.length===1 ? rightUsable/2 : (i/(rightPresent.length-1))*rightUsable)]));
+
+  allV.forEach(d => {
+    const xFor = d._vlabel===leftLabel ? lXFor : rXFor;
+    d.tx = xFor[d._vval] ?? W/2;
+    d.x  = d.tx + (Math.random()-.5)*20;
+    d.y  = H*.44 + (Math.random()-.5)*60;
+  });
+
+  svg.selectAll(".dot").remove();
+  const dualCircles = svg.selectAll(".dot").data(allV).join("circle")
+    .attr("class","dot").attr("r",R)
+    .attr("cx", d=>d.x).attr("cy", d=>d.y)
+    .attr("fill", d => colorLookup[d._vval] || "#888").attr("fill-opacity",0.85)
+    .attr("stroke","none").style("cursor","pointer")
+    .on("mouseenter", function(event, d) {
+      tooltipEl.innerHTML =
+        tr("Name", d._vlabel) +
+        tr("Rating", d._vval.includes("$") ? d._vval : d._vval+"/5") +
+        tr("Age",d.age)+tr("City",d.city)+tr("PI vs BRK",d.pi_vs_brk);
+      tooltipEl.style.display="block";
+      d3.select(this).raise().attr("r",R+2.5).attr("stroke","#fff").attr("stroke-width",1.5).attr("fill-opacity",1);
+      posTooltip(event);
+    })
+    .on("mousemove",e=>posTooltip(e))
+    .on("mouseleave", function() {
+      tooltipEl.style.display="none";
+      d3.select(this).attr("r",R).attr("stroke","none").attr("fill-opacity",0.85);
+    });
+
+  dualSim = d3.forceSimulation(allV)
+    .force("collide", d3.forceCollide(R+1.8).strength(0.8).iterations(2))
+    .force("x", d3.forceX(d=>d.tx).strength(0.09))
+    .force("y", d3.forceY(H*.44).strength(0.055))
+    .alphaDecay(0.011).velocityDecay(0.30)
+    .on("tick", () => dualCircles.attr("cx",d=>d.x).attr("cy",d=>d.y));
+  dualSim.alpha(1.0).restart();
+
+  [[leftPresent,lXFor,leftVNodes,leftLabel],[rightPresent,rXFor,rightVNodes,rightLabel]].forEach(([present,xFor,vNodes,lbl]) => {
+    const validTotal = present.filter(v=>v!=="\\u2014").reduce((s,v)=>s+vNodes.filter(d=>d._vval===v).length, 0);
+    present.forEach(v => {
+      const x = xFor[v];
+      const count = vNodes.filter(d=>d._vval===v).length;
+      if (v!=="\\u2014"&&validTotal>0) {
+        svg.append("text").attr("class","col-label")
+          .attr("x",x).attr("y",H-66).attr("text-anchor","middle")
+          .attr("fill","#cccccc").attr("font-size","13px").attr("font-weight","600")
+          .text(Math.round(count/validTotal*100)+"%");
+      }
+      svg.append("text").attr("class","col-label")
+        .attr("x",x).attr("y",H-48).attr("text-anchor","middle")
+        .attr("fill","#4a4a4a").attr("font-size","10px").text("n="+count);
+      svg.append("text").attr("class","col-label")
+        .attr("x",x).attr("y",H-28).attr("text-anchor","middle")
+        .attr("fill","#999999").attr("font-size","12px").text(v);
+    });
+    svg.append("text").attr("class","col-label")
+      .attr("x", present.length>1?(xFor[present[0]]+xFor[present[present.length-1]])/2:xFor[present[0]])
+      .attr("y",H-88).attr("text-anchor","middle")
+      .attr("fill","#ffffff").attr("font-size","13px").attr("font-weight","700")
+      .text(lbl);
+  });
+
+  svg.append("line").attr("class","col-label")
+    .attr("x1",midX).attr("x2",midX).attr("y1",20).attr("y2",H-16)
+    .attr("stroke","#333").attr("stroke-width",1).attr("stroke-dasharray","4,4");
+
+  if (colorsObj) {
+    legendEl.innerHTML="";
+    const hdr=document.createElement("div");
+    hdr.style.cssText="font-size:10px;color:#555;margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase";
+    hdr.textContent="expected ticket price";
+    legendEl.appendChild(hdr);
+    VALS.forEach(v=>{
+      const el=document.createElement("div"); el.className="leg-item";
+      el.innerHTML=`<div class="leg-sw" style="background:${colorsObj[v]||'#888'}"></div><span>${v}</span>`;
+      legendEl.appendChild(el);
+    });
+  } else {
+    renderLegend(DIM_MAP["pi_rate"]);
+    const hdr=document.createElement("div");
+    hdr.style.cssText="font-size:10px;color:#666;margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase";
+    hdr.textContent="1 = not likely \\u00b7 5 = very likely";
+    legendEl.insertBefore(hdr, legendEl.firstChild);
+  }
+}
+
+// ── goMultiField ──────────────────────────────────────────────────────────────
+function goMultiField(field, orderArr, colorsObj) {
+  hideColDetail();
+  groupKey=null; colorKey=null; colState=null;
+  if (!W) return;
+
+  const vNodes = [];
+  nodes.forEach(d => {
+    const tags = d[field];
+    if (!tags||tags.length===0) return;
+    tags.forEach(tag => vNodes.push(Object.assign({},d,{vx:0,vy:0,_vtag:tag,_vfield:field})));
+  });
+
+  const present = orderArr.filter(v => vNodes.some(n=>n._vtag===v));
+  const n=present.length, pad=55, usable=W-pad*2;
+  const xFor = Object.fromEntries(present.map((v,i)=>[v, n===1?W/2:pad+(i/(n-1))*usable]));
+
+  vNodes.forEach(d => {
+    d.tx = xFor[d._vtag] ?? W/2;
+    d.x  = d.tx + (Math.random()-.5)*20;
+    d.y  = H*.44 + (Math.random()-.5)*60;
+  });
+
+  circles.attr("fill-opacity",0);
+  svg.selectAll(".mdot").remove();
+  const multiCircles = svg.selectAll(".mdot").data(vNodes).join("circle")
+    .attr("class","mdot").attr("r",R)
+    .attr("cx",d=>d.x).attr("cy",d=>d.y)
+    .attr("fill",d=>colorsObj[d._vtag]||"#888").attr("fill-opacity",0.85)
+    .attr("stroke","none").style("cursor","pointer")
+    .on("mouseenter",function(event,d){
+      tooltipEl.innerHTML=tr("Format",d._vtag)+tr("Age",d.age)+tr("City",d.city)+tr("Reaction",d.reaction);
+      tooltipEl.style.display="block";
+      d3.select(this).raise().attr("r",R+2.5).attr("stroke","#fff").attr("stroke-width",1.5);
+      posTooltip(event);
+    })
+    .on("mousemove",e=>posTooltip(e))
+    .on("mouseleave",function(){
+      tooltipEl.style.display="none";
+      d3.select(this).attr("r",R).attr("stroke","none");
+    });
+
+  multiSim = d3.forceSimulation(vNodes)
+    .force("collide",d3.forceCollide(R+1.8).strength(0.8).iterations(2))
+    .force("x",d3.forceX(d=>d.tx).strength(0.09))
+    .force("y",d3.forceY(H*.44).strength(0.055))
+    .alphaDecay(0.011).velocityDecay(0.30)
+    .on("tick",()=>multiCircles.attr("cx",d=>d.x).attr("cy",d=>d.y));
+  multiSim.alpha(1.0).restart();
+
+  svg.selectAll(".col-label").remove();
+  const totalV = vNodes.length;
+  const totalRespondents = nodes.filter(d=>d[field]&&d[field].length>0).length;
+  present.forEach(v => {
+    const x=xFor[v], count=vNodes.filter(d=>d._vtag===v).length;
+    svg.append("text").attr("class","col-label")
+      .attr("x",x).attr("y",H-66).attr("text-anchor","middle")
+      .attr("fill","#cccccc").attr("font-size","13px").attr("font-weight","600")
+      .text(Math.round(count/totalRespondents*100)+"%");
+    svg.append("text").attr("class","col-label")
+      .attr("x",x).attr("y",H-48).attr("text-anchor","middle")
+      .attr("fill","#4a4a4a").attr("font-size","10px").text("n="+count);
+    svg.append("text").attr("class","col-label")
+      .attr("x",x).attr("y",H-28).attr("text-anchor","middle")
+      .attr("fill","#999999").attr("font-size","12px").text(sl(v));
+  });
+
+  legendEl.innerHTML="";
+  const hdr=document.createElement("div");
+  hdr.style.cssText="font-size:10px;color:#555;margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase";
+  hdr.textContent=`${totalV} selections \\u00b7 ${nodes.filter(d=>d[field]&&d[field].length>0).length} respondents`;
+  legendEl.appendChild(hdr);
+  present.forEach(v=>{
+    const el=document.createElement("div"); el.className="leg-item";
+    el.innerHTML=`<div class="leg-sw" style="background:${colorsObj[v]||'#888'}"></div><span>${v}</span>`;
+    legendEl.appendChild(el);
+  });
+}
+
+// ── goDualMulti ───────────────────────────────────────────────────────────────
+function goDualMulti(leftField, leftLabel, rightField, rightLabel) {
+  groupKey=null; colorKey=null;
+  if (!W) return;
+  svg.selectAll(".col-label").remove();
+  svg.selectAll(".mdot").remove();
+  circles.attr("fill-opacity",0);
+  legendEl.innerHTML="";
+
+  const gap=32, pad=48, midX=W/2;
+  const leftUsable=midX-gap/2-pad, rightUsable=W-(midX+gap/2)-pad;
+
+  const leftVNodes=[], rightVNodes=[];
+  nodes.forEach(d=>{
+    (d[leftField]||[]).forEach(tag=>leftVNodes.push(Object.assign({},d,{vx:0,vy:0,_vtag:tag,_vside:"left",_vlabel:leftLabel})));
+    (d[rightField]||[]).forEach(tag=>rightVNodes.push(Object.assign({},d,{vx:0,vy:0,_vtag:tag,_vside:"right",_vlabel:rightLabel})));
+  });
+  const allV=[...leftVNodes,...rightVNodes];
+
+  const leftPresent  = GROUPS_ORDER.filter(v=>leftVNodes.some(d=>d._vtag===v));
+  const rightPresent = GROUPS_ORDER.filter(v=>rightVNodes.some(d=>d._vtag===v));
+
+  const lXFor=Object.fromEntries(leftPresent.map((v,i)=>[v,pad+(leftPresent.length===1?leftUsable/2:(i/(leftPresent.length-1))*leftUsable)]));
+  const rXFor=Object.fromEntries(rightPresent.map((v,i)=>[v,midX+gap/2+pad+(rightPresent.length===1?rightUsable/2:(i/(rightPresent.length-1))*rightUsable)]));
+
+  allV.forEach(d=>{
+    const xFor=d._vside==="left"?lXFor:rXFor;
+    d.tx=xFor[d._vtag]??(d._vside==="left"?midX/2:midX+midX/2);
+    d.x=d.tx+(Math.random()-.5)*20;
+    d.y=H*.44+(Math.random()-.5)*60;
+  });
+
+  const dualMultiCircles=svg.selectAll(".mdot").data(allV).join("circle")
+    .attr("class","mdot").attr("r",R)
+    .attr("cx",d=>d.x).attr("cy",d=>d.y)
+    .attr("fill",d=>COLORS.groups[d._vtag]||"#888").attr("fill-opacity",0.85)
+    .attr("stroke","none").style("cursor","pointer")
+    .on("mouseenter",function(event,d){
+      tooltipEl.innerHTML=tr("Panel",d._vlabel)+tr("Group",d._vtag)+tr("Age",d.age)+tr("City",d.city);
+      tooltipEl.style.display="block";
+      d3.select(this).raise().attr("r",R+2.5).attr("stroke","#fff").attr("stroke-width",1.5);
+      posTooltip(event);
+    })
+    .on("mousemove",e=>posTooltip(e))
+    .on("mouseleave",function(){
+      tooltipEl.style.display="none";
+      d3.select(this).attr("r",R).attr("stroke","none");
+    });
+
+  dualSim=d3.forceSimulation(allV)
+    .force("collide",d3.forceCollide(R+1.8).strength(0.8).iterations(2))
+    .force("x",d3.forceX(d=>d.tx).strength(0.09))
+    .force("y",d3.forceY(H*.44).strength(0.055))
+    .alphaDecay(0.011).velocityDecay(0.30)
+    .on("tick",()=>dualMultiCircles.attr("cx",d=>d.x).attr("cy",d=>d.y));
+  dualSim.alpha(1.0).restart();
+
+  [[leftPresent,lXFor,leftVNodes,leftLabel,leftField],[rightPresent,rXFor,rightVNodes,rightLabel,rightField]].forEach(([present,xFor,vNodes,lbl,fld])=>{
+    const respCount=nodes.filter(d=>d[fld]&&d[fld].length>0).length;
+    const totalTags=vNodes.length;
+    present.forEach(v=>{
+      const x=xFor[v], count=vNodes.filter(d=>d._vtag===v).length;
+      svg.append("text").attr("class","col-label")
+        .attr("x",x).attr("y",H-66).attr("text-anchor","middle")
+        .attr("fill","#cccccc").attr("font-size","12px").attr("font-weight","600")
+        .text(Math.round(count/totalTags*100)+"%");
+      svg.append("text").attr("class","col-label")
+        .attr("x",x).attr("y",H-48).attr("text-anchor","middle")
+        .attr("fill","#4a4a4a").attr("font-size","10px").text("n="+count);
+      const lab=v.length>22?v.slice(0,20)+"\\u2026":v;
+      svg.append("text").attr("class","col-label")
+        .attr("x",x).attr("y",H-28).attr("text-anchor","middle")
+        .attr("fill","#999999").attr("font-size","11px").text(lab);
+    });
+    const midLabelX=present.length>1?(xFor[present[0]]+xFor[present[present.length-1]])/2:xFor[present[0]];
+    svg.append("text").attr("class","col-label")
+      .attr("x",midLabelX).attr("y",H-88).attr("text-anchor","middle")
+      .attr("fill","#ffffff").attr("font-size","13px").attr("font-weight","700")
+      .text(`${lbl} (n=${respCount})`);
+  });
+
+  svg.append("line").attr("class","col-label")
+    .attr("x1",midX).attr("x2",midX).attr("y1",20).attr("y2",H-16)
+    .attr("stroke","#333").attr("stroke-width",1).attr("stroke-dasharray","4,4");
+
+  legendEl.innerHTML="";
+  const hdr=document.createElement("div");
+  hdr.style.cssText="font-size:10px;color:#555;margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase";
+  hdr.textContent="expected audience group";
+  legendEl.appendChild(hdr);
+  GROUPS_ORDER.forEach(v=>{
+    const lc=leftVNodes.filter(d=>d._vtag===v).length;
+    const rc=rightVNodes.filter(d=>d._vtag===v).length;
+    if(!lc&&!rc) return;
+    const el=document.createElement("div"); el.className="leg-item";
+    el.innerHTML=`<div class="leg-sw" style="background:${COLORS.groups[v]||'#888'}"></div><span>${v}</span><span class="leg-pct">${lc}\\u00b7${rc}</span>`;
+    legendEl.appendChild(el);
+  });
+}
+
+// ── showQualitative / hideQualitative ─────────────────────────────────────────
+function showQualitative() {
+  document.getElementById("chart").style.display="none";
+  const qw=document.getElementById("qual-wrap");
+  qw.innerHTML="";
+  qw.style.display="block";
+  const quotes=RAW.filter(d=>d.t_qual&&d.t_qual.length>0);
+  if(!quotes.length){
+    qw.innerHTML='<div style="color:#444;padding:40px;text-align:center">No responses recorded.</div>';
+    return;
+  }
+  const hdr=document.createElement("div");
+  hdr.style.cssText="font-size:10px;color:#383838;letter-spacing:.08em;text-transform:uppercase;margin-bottom:18px";
+  hdr.textContent=`${quotes.length} open-ended responses`;
+  qw.appendChild(hdr);
+  quotes.forEach(d=>{
+    const card=document.createElement("div"); card.className="quote-card";
+    const highlighted=d.t_qual.replace(/\\b(prison|name)\\b/gi,m=>`<span class="quote-highlight">${m}</span>`);
+    card.innerHTML=`<div>${highlighted}</div>`;
+    const meta=document.createElement("div"); meta.className="q-meta";
+    const parts=[];
+    if(d.age&&d.age!=="Unknown") parts.push(d.age);
+    if(d.city&&d.city!=="Unknown") parts.push(d.city);
+    if(d.reaction&&d.reaction!=="\\u2014") parts.push(d.reaction);
+    meta.textContent=parts.join(" \\u00b7 ");
+    card.appendChild(meta);
+    qw.appendChild(card);
+  });
+}
+function hideQualitative() {
+  document.getElementById("chart").style.display="";
+  document.getElementById("qual-wrap").style.display="none";
+}
+
+// ── showFilterBtns / hideFilterBtns ──────────────────────────────────────────
+const filterBtnRow=document.getElementById("filter-btn-row");
+function showFilterBtns(btns) {
+  filterBtnRow.innerHTML="";
+  filterBtnRow.style.display="flex";
+  const allBtn=document.createElement("button");
+  allBtn.className="filter-btn fb-active"; allBtn.textContent="All";
+  allBtn.addEventListener("click",()=>{
+    clearFilter();
+    filterBtnRow.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("fb-active"));
+    allBtn.classList.add("fb-active");
+  });
+  filterBtnRow.appendChild(allBtn);
+  btns.forEach(btn=>{
+    const el=document.createElement("button");
+    el.className="filter-btn"; el.textContent=btn.label;
+    el.addEventListener("click",()=>{
+      if(filterField===btn.field&&filterVal===btn.val){ clearFilter(); filterBtnRow.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("fb-active")); allBtn.classList.add("fb-active"); }
+      else{ applyFilter(btn.field,btn.val); filterBtnRow.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("fb-active")); el.classList.add("fb-active"); }
+    });
+    filterBtnRow.appendChild(el);
+  });
+}
+function hideFilterBtns() { filterBtnRow.style.display="none"; filterBtnRow.innerHTML=""; }
+
+// ── Column detail popup ───────────────────────────────────────────────────────
+const colDetailEl=document.getElementById("col-detail");
+function showColDetail(colVal,groupDim,effDim,pageX,pageY) {
+  const colNodes=nodes.filter(d=>d[groupDim.field]===colVal);
+  const n=colNodes.length; if(!n) return;
+  const breakDim=effDim!==groupDim?effDim:groupDim;
+  const present=breakDim.order.filter(v=>v!=="\\u2014"&&colNodes.some(d=>d[breakDim.field]===String(v)));
+  const rows=present.map(v=>{
+    const c=colNodes.filter(d=>d[breakDim.field]===String(v)).length;
+    const pct=Math.round(c/n*100);
+    const col=breakDim.colors[String(v)]||"#888";
+    return `<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col};margin-right:7px"></span>${v}</td><td class="num">${c}</td><td class="pct">${pct}%</td></tr>`;
+  }).join("");
+  colDetailEl.innerHTML=`<h4>${colVal} <span style="font-weight:400;color:#555">n=${n}</span></h4><table>${rows}</table><div class="close-hint">click anywhere to close</div>`;
+  const pw=240;
+  let left=pageX+14;
+  if(left+pw>window.innerWidth-8) left=pageX-pw-14;
+  colDetailEl.style.left=left+"px";
+  colDetailEl.style.display="block";
+  const ph=colDetailEl.offsetHeight;
+  let top=pageY-20;
+  if(top+ph>window.innerHeight-8) top=pageY-ph+20;
+  colDetailEl.style.top=Math.max(8,top)+"px";
+}
+function hideColDetail() { colDetailEl.style.display="none"; }
+document.addEventListener("click",e=>{ if(!colDetailEl.contains(e.target)) hideColDetail(); });
+
+// ── Column label renderer ─────────────────────────────────────────────────────
+let colState=null;
+function updateColLabels() {
+  svg.selectAll(".col-label").remove();
+  if(!colState) return;
+  const {cols,dim,eff}=colState;
+  const pool=(filterVal!==null)?nodes.filter(d=>d[filterField]===filterVal):nodes;
+  const validTotal=cols.filter(({val})=>val!=="\\u2014").reduce((s,{val})=>s+pool.filter(d=>d[dim.field]===val).length,0);
+  const spacing=cols.length>1?Math.abs(cols[1].x-cols[0].x):120;
+  cols.forEach(({val,x})=>{
+    const count=pool.filter(d=>d[dim.field]===val).length;
+    if(val!=="\\u2014"&&validTotal>0){
+      svg.append("text").attr("class","col-label")
+        .attr("x",x).attr("y",H-66).attr("text-anchor","middle")
+        .attr("fill","#cccccc").attr("font-size","13px").attr("font-weight","600")
+        .text(Math.round(count/validTotal*100)+"%");
+    }
+    svg.append("text").attr("class","col-label")
+      .attr("x",x).attr("y",H-48).attr("text-anchor","middle")
+      .attr("fill","#4a4a4a").attr("font-size","10px").text("n="+count);
+    svg.append("text").attr("class","col-label")
+      .attr("x",x).attr("y",H-28).attr("text-anchor","middle")
+      .attr("fill","#999999").attr("font-size","12px").style("cursor","pointer")
+      .text(sl(val));
+    svg.append("rect").attr("class","col-label")
+      .attr("x",x-spacing*0.44).attr("y",H-96)
+      .attr("width",spacing*0.88).attr("height",80)
+      .attr("fill","transparent").style("cursor","pointer")
+      .on("click",event=>{ event.stopPropagation(); showColDetail(val,dim,eff||dim,event.pageX,event.pageY); });
+  });
+}
+
+// ── Beeswarm go / idle ────────────────────────────────────────────────────────
+function sortedGridPositions(colNodes, cx, colorOrder, colorField) {
+  const step = (R+1.8)*2 + 1.5;
+  const sorted = [...colNodes].sort((a,b) => {
+    const ai = colorOrder.indexOf(String(a[colorField]));
+    const bi = colorOrder.indexOf(String(b[colorField]));
+    return (ai<0?9999:ai) - (bi<0?9999:bi);
+  });
+  const colSpacingPx = W > 0 ? (W - 110) / Math.max(1, colorOrder.length - 1) : 200;
+  const gridW = Math.max(1, Math.min(sorted.length, Math.floor(colSpacingPx * 0.72 / step)));
+  const nRows = Math.ceil(sorted.length / gridW);
+  const yCenter = H * 0.44;
+  const yStart = yCenter - (nRows - 1) * step / 2;
+  sorted.forEach((d, i) => {
+    const col = i % gridW;
+    const row = Math.floor(i / gridW);
+    d.tx = cx + (col - (gridW - 1) / 2) * step;
+    d.ty = yStart + row * step;
+  });
+}
+
+function go(gKey,cKey) {
+  if(dualSim) teardownDual();
+  if(multiSim) teardownMulti();
+  hideColDetail();
+  groupKey=gKey; colorKey=cKey||null;
+  if(!W) return;
+  const dim=DIM_MAP[gKey];
+  const present=dim.order.filter(v=>nodes.some(d=>d[dim.field]===String(v)));
+  const n=present.length, pad=55, usable=W-pad*2;
+  const xFor=Object.fromEntries(present.map((v,i)=>[String(v),n===1?W/2:pad+(i/(n-1))*usable]));
+  const eff=DIM_MAP[colorKey]||dim;
+  present.forEach(v=>{
+    const colNodes=nodes.filter(d=>d[dim.field]===String(v));
+    sortedGridPositions(colNodes, xFor[String(v)], eff.order, eff.field);
+  });
+  sim.force("x").x(d=>d.tx).strength(0.22);
+  sim.force("y").y(d=>d.ty??H*.44).strength(0.22);
+  sim.alpha(1.0).restart();
+  circles.transition().duration(1100).ease(d3.easeCubicInOut)
+    .attr("fill",d=>eff.colors[d[eff.field]]||"#888").attr("fill-opacity",0.88);
+  colState={cols:present.map((v,i)=>({val:String(v),x:n===1?W/2:pad+(i/(n-1))*usable})),dim,eff};
+  updateColLabels();
+  renderLegend(eff);
+}
+
+function idle(cKey) {
+  if(dualSim) teardownDual();
+  if(multiSim) teardownMulti();
+  groupKey=null; colorKey=cKey||null; colState=null;
+  nodes.forEach(d=>{delete d.tx; delete d.ty;});
+  sim.force("x").x(W/2).strength(0.035);
+  sim.force("y").y(d=>H*.44).strength(0.035);
+  sim.alpha(0.75).restart();
+  const dim=cKey?DIM_MAP[cKey]:null;
+  circles.transition().duration(900).ease(d3.easeCubicInOut)
+    .attr("fill",dim?d=>(dim.colors[d[dim.field]]||"#888"):IDLE_C)
+    .attr("fill-opacity",dim?0.82:0.62);
+  svg.selectAll(".col-label").remove();
+  if(dim) renderLegend(dim); else legendEl.innerHTML="";
+}
+
+// ── Filter ────────────────────────────────────────────────────────────────────
+function applyFilter(field,val,updateLeg) {
+  filterField=field; filterVal=val;
+  const eff=colorKey?DIM_MAP[colorKey]:(groupKey?DIM_MAP[groupKey]:null);
+  circles.transition().duration(350).ease(d3.easeCubicInOut)
+    .attr("fill",d=>d[field]===val?(eff?eff.colors[d[eff.field]]||"#888":"#888"):IDLE_C)
+    .attr("fill-opacity",d=>d[field]===val?0.92:0.10);
+  updateColLabels();
+  if(updateLeg!==false) refreshLegendFilter();
+}
+function clearFilter() {
+  filterField=null; filterVal=null;
+  const eff=colorKey?DIM_MAP[colorKey]:(groupKey?DIM_MAP[groupKey]:null);
+  circles.transition().duration(350).ease(d3.easeCubicInOut)
+    .attr("fill",d=>eff?eff.colors[d[eff.field]]||"#888":IDLE_C)
+    .attr("fill-opacity",groupKey?0.88:0.62);
+  updateColLabels();
+  refreshLegendFilter();
+}
+function refreshLegendFilter() {
+  legendEl.querySelectorAll(".leg-item").forEach(el=>{
+    el.classList.toggle("leg-active",filterVal!==null&&el.dataset.val===filterVal);
+    el.classList.toggle("leg-dimmed",filterVal!==null&&el.dataset.val!==filterVal);
+  });
+}
+function renderLegend(dim) {
+  legendEl.innerHTML="";
+  const present=dim.order.filter(v=>v!=="\\u2014"&&nodes.some(d=>d[dim.field]===String(v)));
+  const total=present.reduce((s,v)=>s+nodes.filter(d=>d[dim.field]===String(v)).length,0);
+  present.forEach(v=>{
+    const count=nodes.filter(d=>d[dim.field]===String(v)).length;
+    const pct=total>0?Math.round(count/total*100):0;
+    const el=document.createElement("div"); el.className="leg-item";
+    el.dataset.val=String(v);
+    el.innerHTML=`<div class="leg-sw" style="background:${dim.colors[String(v)]||'#888'}"></div><span>${v}</span><span class="leg-pct">${pct}%</span>`;
+    el.addEventListener("click",()=>{
+      if(filterVal===String(v)&&filterField===dim.field) clearFilter();
+      else applyFilter(dim.field,String(v));
+    });
+    legendEl.appendChild(el);
+  });
+  if(filterField===dim.field) refreshLegendFilter();
+}
+
+// ── Tooltip ───────────────────────────────────────────────────────────────────
+function tr(k,v) {
+  if(!v||v==="\\u2014") return "";
+  return `<div class="tt-row"><span class="tt-k">${k}</span><span class="tt-v">${v}</span></div>`;
+}
+function onHover(event,d) {
+  tooltipEl.innerHTML=
+    tr("Age",d.age)+tr("City",d.city)+tr("Reaction",d.reaction)+
+    tr("Survey group",d.survey_group)+tr("Crowd pick",d.crowd_pick)+
+    (d.pi_rate!=="\\u2014"?tr("PI rating",d.pi_rate+"/5"):"")+
+    (d.brk_pi_rate!=="\\u2014"?tr("BRK rating",d.brk_pi_rate+"/5"):"")+
+    tr("PI vs BRK",d.pi_vs_brk)+
+    tr("PI price",d.pi_price_bucket)+tr("BRK price",d.brk_price_bucket);
+  tooltipEl.style.display="block";
+  d3.select(this).raise().attr("r",R+2.5).attr("stroke","#fff").attr("stroke-width",1.5).attr("fill-opacity",1);
+  posTooltip(event);
+}
+function onLeave() {
+  tooltipEl.style.display="none";
+  d3.select(this).attr("r",R).attr("stroke","none").attr("fill-opacity",groupKey?0.88:0.62);
+}
+function posTooltip(e) {
+  const x=e.clientX+16, y=e.clientY-10;
+  tooltipEl.style.left=(x+265>window.innerWidth?e.clientX-275:x)+"px";
+  tooltipEl.style.top=y+"px";
+}
+document.addEventListener("mousemove",e=>{ if(tooltipEl.style.display==="block") posTooltip(e); });
+
+// ── Free-explore buttons ──────────────────────────────────────────────────────
+let expGroup=null, expColor=null;
+function buildExpButtons() {
+  const gW=document.getElementById("group-btns"), cW=document.getElementById("color-btns");
+  DIMS.forEach(d=>{
+    [gW,cW].forEach(wrap=>{
+      const b=document.createElement("button");
+      b.className="dim-btn"; b.textContent=d.label; b.dataset.key=d.key;
+      wrap.appendChild(b);
+    });
+  });
+  gW.addEventListener("click",e=>{
+    const b=e.target.closest(".dim-btn"); if(!b) return;
+    const k=b.dataset.key;
+    if(expGroup===k){expGroup=null;expColor=null;idle();}
+    else{expGroup=k;expColor=null;go(k,null);}
+    refreshExpBtns();
+  });
+  cW.addEventListener("click",e=>{
+    const b=e.target.closest(".dim-btn"); if(!b) return;
+    expColor=(b.dataset.key===expGroup)?null:b.dataset.key;
+    go(expGroup,expColor);
+    refreshExpBtns();
+  });
+}
+function refreshExpBtns() {
+  document.querySelectorAll("#group-btns .dim-btn").forEach(b=>b.classList.toggle("active",b.dataset.key===expGroup));
+  document.getElementById("color-row").style.display=expGroup?"flex":"none";
+  const eff=expColor||expGroup;
+  document.querySelectorAll("#color-btns .dim-btn").forEach(b=>{
+    b.classList.toggle("active",b.dataset.key===eff&&expColor!==null);
+    b.classList.toggle("soft",  b.dataset.key===eff&&expColor===null);
+  });
+}
+
+// ── Slide engine ──────────────────────────────────────────────────────────────
+let current=0;
+const TOTAL=SLIDES.length;
+
+function showSlide(idx) {
+  filterField=null; filterVal=null;
+  current=Math.max(0,Math.min(TOTAL-1,idx));
+  const s=SLIDES[current];
+  document.getElementById("slide-num").textContent=`${current+1} / ${TOTAL}`;
+
+  hideQualitative();
+  if(dualSim) teardownDual();
+  if(multiSim) teardownMulti();
+  hideColDetail();
+
+  const tw=document.getElementById("text-wrap");
+  const ew=document.getElementById("explore-wrap");
+
+  if(s.free){
+    tw.style.display="none";
+    ew.style.display="flex";
+    if(expGroup) go(expGroup,expColor); else idle();
+    refreshExpBtns();
+    hideFilterBtns();
+  } else {
+    tw.style.display="block";
+    ew.style.display="none";
+    ["slide-title","slide-sub","slide-body"].forEach(id=>{document.getElementById(id).style.opacity="0";});
+    setTimeout(()=>{
+      document.getElementById("slide-title").textContent=s.title;
+      const subEl=document.getElementById("slide-sub");
+      subEl.textContent=s.sub||""; subEl.style.display=s.sub?"":"none";
+      document.getElementById("slide-body").innerHTML=s.body||"";
+      ["slide-title","slide-sub","slide-body"].forEach(id=>{document.getElementById(id).style.opacity="1";});
+    },280);
+
+    if(s.qualitative) {
+      showQualitative();
+    } else if(s.dualMulti) {
+      goDualMulti(s.dualMulti.left,s.dualMulti.leftLabel,s.dualMulti.right,s.dualMulti.rightLabel);
+    } else if(s.multi) {
+      goMultiField(s.multi.field,s.multi.order,s.multi.colors);
+    } else if(s.dual) {
+      goDual(s.dual.left,s.dual.leftLabel,s.dual.right,s.dual.rightLabel,
+             s.dual.filterField||null,s.dual.vals||null,s.dual.colors||null);
+    } else if(s.group) {
+      go(s.group,s.color||null);
+    } else {
+      idle(s.color||null);
+    }
+
+    if(s.filterBtns) showFilterBtns(s.filterBtns); else hideFilterBtns();
+  }
+
+  document.getElementById("prev-btn").disabled=(current===0);
+  document.getElementById("next-btn").disabled=(current===TOTAL-1);
+  document.querySelectorAll(".pdot").forEach((d,i)=>d.classList.toggle("on",i===current));
+}
+
+function nav(dir) {
+  if(dir===-1&&current>0) showSlide(current-1);
+  if(dir===1&&current<TOTAL-1) showSlide(current+1);
+}
+function buildProgress() {
+  const prog=document.getElementById("progress");
+  SLIDES.forEach((_,i)=>{
+    const d=document.createElement("div"); d.className="pdot";
+    d.onclick=()=>showSlide(i); prog.appendChild(d);
+  });
+}
+
+document.getElementById("prev-btn").onclick=()=>nav(-1);
+document.getElementById("next-btn").onclick=()=>nav(1);
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight"||e.key==="ArrowDown") nav(1);
+  if(e.key==="ArrowLeft"||e.key==="ArrowUp") nav(-1);
+});
+
+window.addEventListener("resize",()=>{
+  initChart();
+  const s=SLIDES[current];
+  if(s.qualitative){showQualitative();return;}
+  if(s.dualMulti) goDualMulti(s.dualMulti.left,s.dualMulti.leftLabel,s.dualMulti.right,s.dualMulti.rightLabel);
+  else if(s.multi) goMultiField(s.multi.field,s.multi.order,s.multi.colors);
+  else if(s.dual)  goDual(s.dual.left,s.dual.leftLabel,s.dual.right,s.dual.rightLabel,s.dual.filterField||null,s.dual.vals||null,s.dual.colors||null);
+  else if(s.group) go(s.group,s.color||null);
+  else             idle(s.color||null);
+  if(s.filterBtns) showFilterBtns(s.filterBtns);
+});
+setInterval(()=>{if(!groupKey&&!multiSim&&sim.alpha()<0.04) sim.alpha(0.1).restart();},4500);
+
+buildExpButtons();
+buildProgress();
+requestAnimationFrame(()=>{initChart();showSlide(0);});
+</script>
+</body>
+</html>
+"""
+
+
+def show_new_presentation(fdf):
+    def clean(v):
+        return re.sub(r"\*+", "", str(v)).strip() if pd.notna(v) else ""
+
+    def first_rate(row, *indices):
+        for i in indices:
+            v = row.iloc[i]
+            if pd.notna(v):
+                try:
+                    return int(float(v))
+                except (ValueError, TypeError):
+                    pass
+        return None
+
+    def first_clean(row, *indices):
+        for i in indices:
+            v = row.iloc[i]
+            c = re.sub(r"\*+", "", str(v)).strip() if pd.notna(v) else ""
+            if c and c != "nan":
+                return c
+        return None
+
+    def split_multi(row, col_idx):
+        v = row.iloc[col_idx]
+        if pd.isna(v):
+            return []
+        c = re.sub(r"\*+", "", str(v)).strip()
+        if not c or c == "nan":
+            return []
+        return [x.strip() for x in c.split(", ") if x.strip()]
+
+    def price_bucket(row, col_idx):
+        v = row.iloc[col_idx]
+        if pd.isna(v):
+            return "—"
+        try:
+            n = float(v)
+        except (ValueError, TypeError):
+            return "—"
+        if n < 25:   return "Under $25"
+        elif n < 35: return "$25–34"
+        elif n < 45: return "$35–44"
+        elif n < 55: return "$45–54"
+        else:        return "$55+"
+
+    def reaction_val(row):
+        v = clean(row.iloc[4])
+        if not v or v == "nan":
+            return "—"
+        return v.split(",")[0].strip()
+
+    def survey_group_val(row):
+        def is_num(x):
+            try:
+                float(x)
+                return True
+            except (ValueError, TypeError):
+                return False
+        if pd.notna(row.iloc[7]) and is_num(row.iloc[7]):
+            return "PI-first"
+        if pd.notna(row.iloc[9]) and is_num(row.iloc[9]):
+            return "BRK-first"
+        return "—"
+
+    def crowd_pick_val(row):
+        v = first_clean(row, 19)
+        return v if v else "—"
+
+    def tqual_val(row):
+        v = clean(row.iloc[27])
+        if not v or v == "nan":
+            return ""
+        return v if len(v) > 20 else ""
+
+    records = []
+    for _, row in fdf.iterrows():
+        records.append({
+            "age":              clean(row.iloc[3]) or "Unknown",
+            "city":             str(row["_city"]),
+            "freq":             clean(row.iloc[1]) or "Unknown",
+            "pi_rate":          first_rate(row, 7),
+            "brk_pi_rate":      first_rate(row, 9),
+            "pi_vs_brk":        first_clean(row, 15, 16) or "—",
+            "formats":          split_multi(row, 0),
+            "reaction":         reaction_val(row),
+            "crowd_pick":       crowd_pick_val(row),
+            "survey_group":     survey_group_val(row),
+            "pi_price_bucket":  price_bucket(row, 22),
+            "brk_price_bucket": price_bucket(row, 24),
+            "pi_groups":        split_multi(row, 21),
+            "brk_groups":       split_multi(row, 23),
+            "t_qual":           tqual_val(row),
+        })
+
+    html = _NEW_PRESENTATION_HTML.replace("__DATA__", json.dumps(records))
+    components.html(html, height=730, scrolling=False)
+
+
 # ── Overview chart functions ──────────────────────────────────────────────────
 
 def bar_chart(series, title, use_pct, note=None, order=None):
@@ -1732,12 +2868,14 @@ def main():
     use_pct = st.sidebar.toggle("Show as percentages", value=False)
 
     st.sidebar.divider()
-    page = st.sidebar.radio("View", ["Presentation", "Explore", "Overview", "By City"])
+    page = st.sidebar.radio("View", ["New Deck", "Archive", "Explore", "Overview", "By City"])
 
     fdf = apply_filters(df, cities, groups, jails)
     st.caption(f"Showing **{len(fdf)}** of **{len(df)}** responses")
 
-    if page == "Presentation":
+    if page == "New Deck":
+        show_new_presentation(fdf)
+    elif page == "Archive":
         show_presentation(fdf)
     elif page == "Explore":
         show_beeswarm(fdf)
