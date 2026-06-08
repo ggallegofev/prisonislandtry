@@ -2073,26 +2073,6 @@ function updateColLabels() {
 }
 
 // ── Beeswarm go / idle ────────────────────────────────────────────────────────
-function sortedGridPositions(colNodes, cx, colorOrder, colorField) {
-  const step = (R+1.8)*2 + 1.5;
-  const sorted = [...colNodes].sort((a,b) => {
-    const ai = colorOrder.indexOf(String(a[colorField]));
-    const bi = colorOrder.indexOf(String(b[colorField]));
-    return (ai<0?9999:ai) - (bi<0?9999:bi);
-  });
-  const colSpacingPx = W > 0 ? (W - 110) / Math.max(1, colorOrder.length - 1) : 200;
-  const gridW = Math.max(1, Math.min(sorted.length, Math.floor(colSpacingPx * 0.72 / step)));
-  const nRows = Math.ceil(sorted.length / gridW);
-  const yCenter = H * 0.44;
-  const yStart = yCenter - (nRows - 1) * step / 2;
-  sorted.forEach((d, i) => {
-    const col = i % gridW;
-    const row = Math.floor(i / gridW);
-    d.tx = cx + (col - (gridW - 1) / 2) * step;
-    d.ty = yStart + row * step;
-  });
-}
-
 function go(gKey,cKey) {
   if(dualSim) teardownDual();
   if(multiSim) teardownMulti();
@@ -2103,13 +2083,9 @@ function go(gKey,cKey) {
   const present=dim.order.filter(v=>nodes.some(d=>d[dim.field]===String(v)));
   const n=present.length, pad=55, usable=W-pad*2;
   const xFor=Object.fromEntries(present.map((v,i)=>[String(v),n===1?W/2:pad+(i/(n-1))*usable]));
-  const eff=DIM_MAP[colorKey]||dim;
-  present.forEach(v=>{
-    const colNodes=nodes.filter(d=>d[dim.field]===String(v));
-    sortedGridPositions(colNodes, xFor[String(v)], eff.order, eff.field);
-  });
-  sim.force("x").x(d=>d.tx).strength(0.22);
-  sim.force("y").y(d=>d.ty??H*.44).strength(0.22);
+  nodes.forEach(d=>{d.tx=xFor[d[dim.field]]??W/2;});
+  sim.force("x").x(d=>d.tx).strength(0.09);
+  sim.force("y").y(H*.44).strength(0.055);
   sim.alpha(1.0).restart();
   circles.transition().duration(1100).ease(d3.easeCubicInOut)
     .attr("fill",d=>eff.colors[d[eff.field]]||"#888").attr("fill-opacity",0.88);
@@ -2122,9 +2098,9 @@ function idle(cKey) {
   if(dualSim) teardownDual();
   if(multiSim) teardownMulti();
   groupKey=null; colorKey=cKey||null; colState=null;
-  nodes.forEach(d=>{delete d.tx; delete d.ty;});
+  nodes.forEach(d=>{delete d.tx;});
   sim.force("x").x(W/2).strength(0.035);
-  sim.force("y").y(d=>H*.44).strength(0.035);
+  sim.force("y").y(H*.44).strength(0.035);
   sim.alpha(0.75).restart();
   const dim=cKey?DIM_MAP[cKey]:null;
   circles.transition().duration(900).ease(d3.easeCubicInOut)
