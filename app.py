@@ -2040,7 +2040,7 @@ function goPriceRows() {
       .attr("stroke","#1e1e1e").attr("stroke-width",1);
     svg.append("text").attr("class","col-label")
       .attr("x",leftPad-10).attr("y",y+4).attr("text-anchor","end")
-      .attr("fill","#555").attr("font-size","10px").text(v);
+      .attr("fill","#aaaaaa").attr("font-size","10px").text(v);
   });
 
   // X column labels (bottom)
@@ -2270,7 +2270,7 @@ function goMultiField(field, orderArr, colorsObj, yField, yOrder) {
         .attr("stroke","#1e1e1e").attr("stroke-width",1);
       svg.append("text").attr("class","col-label")
         .attr("x",leftPad-10).attr("y",y+4).attr("text-anchor","end")
-        .attr("fill","#555").attr("font-size","10px").text(v);
+        .attr("fill","#aaaaaa").attr("font-size","10px").text(v);
     });
   }
 
@@ -2331,9 +2331,31 @@ function goMultiField(field, orderArr, colorsObj, yField, yOrder) {
   legendEl.appendChild(hdr);
   if (yField && yPresent) {
     const ageDim = DIM_MAP[yField];
+    const respPool = cohortFilter ? nodes.filter(d=>cohortFilter.vals.has(d[cohortFilter.field])) : nodes;
+    const respTotal = respPool.length;
     yPresent.slice().reverse().forEach(v=>{
+      const count = respPool.filter(d=>d[yField]===String(v)).length;
+      const pct = respTotal>0 ? Math.round(count/respTotal*100) : 0;
       const el=document.createElement("div"); el.className="leg-item";
-      el.innerHTML=`<div class="leg-sw" style="background:${ageDim.colors[v]||'#888'}"></div><span>${v}</span>`;
+      el.dataset.val=String(v);
+      el.innerHTML=`<div class="leg-sw" style="background:${ageDim.colors[v]||'#888'}"></div><span>${v}</span><span class="leg-pct">${pct}%</span>`;
+      el.addEventListener("click",()=>{
+        const isActive=el.classList.contains("leg-active");
+        if(isActive){
+          svg.selectAll(".mdot").transition().duration(350)
+            .attr("fill",d=>ageDim.colors[d[yField]]||"#888")
+            .attr("fill-opacity",0.85);
+          legendEl.querySelectorAll(".leg-item[data-val]").forEach(e=>e.classList.remove("leg-active","leg-dimmed"));
+        } else {
+          svg.selectAll(".mdot").transition().duration(350)
+            .attr("fill",d=>d[yField]===String(v)?(ageDim.colors[d[yField]]||"#888"):IDLE_C)
+            .attr("fill-opacity",d=>d[yField]===String(v)?0.92:0.10);
+          legendEl.querySelectorAll(".leg-item[data-val]").forEach(e=>{
+            e.classList.toggle("leg-active",e.dataset.val===String(v));
+            e.classList.toggle("leg-dimmed",e.dataset.val!==String(v));
+          });
+        }
+      });
       legendEl.appendChild(el);
     });
   } else {
@@ -2464,7 +2486,7 @@ function goDualMulti(leftField, leftLabel, rightField, rightLabel, yField) {
         .attr("stroke","#1e1e1e").attr("stroke-width",1);
       svg.append("text").attr("class","col-label")
         .attr("x",x0-6).attr("y",y+4).attr("text-anchor","end")
-        .attr("fill","#555").attr("font-size","10px").text(v);
+        .attr("fill","#aaaaaa").attr("font-size","10px").text(v);
     });
   }
 
@@ -2628,7 +2650,7 @@ function updateColLabels() {
         .attr("stroke","#1e1e1e").attr("stroke-width",1);
       svg.append("text").attr("class","col-label")
         .attr("x",x0-36).attr("y",y+4).attr("text-anchor","end")
-        .attr("fill","#555").attr("font-size","10px").text(v);
+        .attr("fill","#aaaaaa").attr("font-size","10px").text(v);
     });
   }
   let pool=cohortFilter?nodes.filter(d=>cohortFilter.vals.has(d[cohortFilter.field])):nodes;
