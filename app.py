@@ -1764,7 +1764,7 @@ const SLIDES = [
   },
   {
     headline: "This Fever audience is already primed for the category \\u2014 and the core age group skews competitive.",
-    title: "What they do",
+    title: "What they like to do",
     sub: "Ticketed formats attended in the last 5 years \\u00b7 multi-select",
     body: "Music, cinema, museums, and theatre top the list \\u2014 but Immersive Experiences rank fifth out of nine, ahead of nightlife and comedy. The 35\\u201344 cohort over-indexes most strongly on Sports & Competitions (+9pp above base) \\u2014 the format closest in spirit to Prison Island. The audience is not just category-aware; the biggest group in it leans competitive.",
     multi: { field: "formats", order: FORMATS_ORDER, colors: COLORS.formats, yField: "age", yOrder: AGE_ORDER },
