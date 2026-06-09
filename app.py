@@ -1771,7 +1771,7 @@ const SLIDES = [
   },
   {
     headline: "Half of respondents hadn\\u2019t come across one of these before, but most of them were interested. Target audience appears to be 25\\u201355.",
-    title: "Cold reception",
+    title: "Reaction to concept description",
     sub: "Concept described in words only \\u2014 no name, no branding. How did people react?",
     body: "25\\u201354 is where discovery is cleanest: 66\\u201369% had never seen this and immediately wanted to go. The 35\\u201344 core skews more familiar \\u2014 26% already do this. Above 55, the concept polarises.",
     group: "reaction", color: "reaction", yField: "age",
