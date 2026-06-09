@@ -1653,19 +1653,19 @@ const SLIDES = [
     body: "",
     textOnly: `
       <div style="max-width:520px;margin:0 auto;padding:40px 20px;">
-        <p style="font-size:15px;color:#bbb;line-height:1.8;margin-bottom:28px;">
+        <p style="font-size:15px;color:#fff;line-height:1.8;margin-bottom:28px;">
           No red flags. Both names tested without generating any meaningful backlash,
           and the audience responses were broadly positive across cities and age groups.
           The head-to-head result is close \\u2014 which is itself a finding worth noting.
         </p>
-        <p style="font-size:13px;color:#666;line-height:1.8;margin-bottom:32px;">
+        <p style="font-size:13px;color:#ddd;line-height:1.8;margin-bottom:32px;">
           That said, the sample size is modest and the questions were designed as a first pass.
           To be more confident in the direction, we recommend running this again with a slightly
           refined question set and a larger respondent pool.
         </p>
-        <div style="border-top:1px solid #1e1e1e;padding-top:24px;">
-          <div style="font-size:10px;color:#333;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;">This week</div>
-          <div style="font-size:13px;color:#555;line-height:2;">
+        <div style="border-top:1px solid #2a2a2a;padding-top:24px;">
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;">This week</div>
+          <div style="font-size:13px;color:#ccc;line-height:2;">
             \\u2192&nbsp; Revise question wording based on open-ended feedback<br>
             \\u2192&nbsp; Increase sample to ~400 respondents<br>
             \\u2192&nbsp; Re-run survey and compare results
@@ -3388,6 +3388,7 @@ def main():
     st.set_page_config(page_title="Prison Island — Naming Feedback", layout="wide")
     st.markdown("""<style>
         [data-testid="stSidebar"], [data-testid="collapsedControl"] { display: none !important; }
+        [data-testid="stStatusWidget"], .stDeployButton, #MainMenu { display: none !important; }
         /* Hide Streamlit's own top toolbar and tighten padding */
         [data-testid="stHeader"] { display: none !important; }
         .block-container { padding-top: 0.5rem !important; padding-bottom: 0 !important; }
