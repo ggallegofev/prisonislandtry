@@ -1760,6 +1760,8 @@ function teardownMulti() {
 // ── goPriceRows: 3-row beeswarm, one row per event, exploded from price fields ──
 function goPriceRows() {
   hideColDetail();
+  if (dualSim)  { dualSim.stop();  dualSim  = null; }
+  if (multiSim) { multiSim.stop(); multiSim = null; }
   groupKey=null; colorKey=null; colState=null;
   if (!W) return;
 
@@ -1861,7 +1863,7 @@ function goPriceRows() {
 
   // Legend: event names
   legendEl.innerHTML="";
-  eventsPresent.forEach(e=>{
+  yPresent.forEach(e=>{
     const n=vNodes.filter(d=>d._pe===e).length;
     const el=document.createElement("div"); el.className="leg-item";
     el.innerHTML=`<div class="leg-sw" style="background:${PRICE_EVENT_COLORS[e]}"></div><span>${e}</span><span class="leg-pct">n=${n}</span>`;
@@ -1873,7 +1875,9 @@ function goPriceRows() {
 function goDual(leftField, leftLabel, rightField, rightLabel, filterFieldArg, vals, colorsObj) {
   groupKey = null; colorKey = null;
   if (!W) return;
-  if (dualSim) { dualSim.stop(); dualSim = null; }
+  if (dualSim)  { dualSim.stop();  dualSim  = null; }
+  if (multiSim) { multiSim.stop(); multiSim = null; }
+  svg.selectAll(".mdot").remove();
   svg.selectAll(".col-label").remove();
   legendEl.innerHTML = "";
 
@@ -2143,6 +2147,8 @@ function goMultiField(field, orderArr, colorsObj, yField, yOrder) {
 function goDualMulti(leftField, leftLabel, rightField, rightLabel, yField) {
   groupKey=null; colorKey=null;
   if (!W) return;
+  if (dualSim)  { dualSim.stop();  dualSim  = null; }
+  if (multiSim) { multiSim.stop(); multiSim = null; }
   svg.selectAll(".col-label").remove();
   svg.selectAll(".mdot").remove();
   circles.attr("fill-opacity",0);
@@ -2710,19 +2716,23 @@ function showSlide(idx) {
       qw.innerHTML=s.textOnly; qw.style.display="block";
     } else if(s.qualitative) {
       showQualitative();
-    } else if(s.dualMulti) {
-      goDualMulti(s.dualMulti.left,s.dualMulti.leftLabel,s.dualMulti.right,s.dualMulti.rightLabel,s.dualMulti.yField||null);
-    } else if(s.multi) {
-      goMultiField(s.multi.field,s.multi.order,s.multi.colors,s.multi.yField||null,s.multi.yOrder||null);
-    } else if(s.priceRows) {
-      goPriceRows();
-    } else if(s.dual) {
-      goDual(s.dual.left,s.dual.leftLabel,s.dual.right,s.dual.rightLabel,
-             s.dual.filterField||null,s.dual.vals||null,s.dual.colors||null);
-    } else if(s.group) {
-      go(s.group,s.color||null,s.yField||null);
     } else {
-      idle(s.color||null);
+      document.getElementById("chart").style.display="";
+      document.getElementById("qual-wrap").style.display="none";
+      if(s.dualMulti) {
+        goDualMulti(s.dualMulti.left,s.dualMulti.leftLabel,s.dualMulti.right,s.dualMulti.rightLabel,s.dualMulti.yField||null);
+      } else if(s.multi) {
+        goMultiField(s.multi.field,s.multi.order,s.multi.colors,s.multi.yField||null,s.multi.yOrder||null);
+      } else if(s.priceRows) {
+        goPriceRows();
+      } else if(s.dual) {
+        goDual(s.dual.left,s.dual.leftLabel,s.dual.right,s.dual.rightLabel,
+               s.dual.filterField||null,s.dual.vals||null,s.dual.colors||null);
+      } else if(s.group) {
+        go(s.group,s.color||null,s.yField||null);
+      } else {
+        idle(s.color||null);
+      }
     }
 
     if(s.cohortBtns) showCohortBtns(s.cohortBtns);
@@ -2759,6 +2769,8 @@ window.addEventListener("resize",()=>{
   initChart();
   const s=SLIDES[current];
   if(s.textOnly||s.qualitative){showSlide(current);return;}
+  document.getElementById("chart").style.display="";
+  document.getElementById("qual-wrap").style.display="none";
   if(s.dualMulti) goDualMulti(s.dualMulti.left,s.dualMulti.leftLabel,s.dualMulti.right,s.dualMulti.rightLabel,s.dualMulti.yField||null);
   else if(s.multi) goMultiField(s.multi.field,s.multi.order,s.multi.colors,s.multi.yField||null,s.multi.yOrder||null);
   else if(s.priceRows) goPriceRows();
