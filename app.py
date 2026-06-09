@@ -3580,7 +3580,8 @@ def main():
         [data-testid="stRadio"] {
             position: fixed !important;
             bottom: 18px !important;
-            right: 22px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
             z-index: 9999;
             background: transparent;
         }
