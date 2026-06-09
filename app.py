@@ -1730,11 +1730,11 @@ const SLIDES = [
     body: "",
     textOnly: `
       <div style="max-width:500px;margin:0 auto;padding:48px 20px;">
-        <div style="font-size:22px;color:#ddd;font-weight:600;line-height:1.4;margin-bottom:32px;">
+        <div style="font-size:22px;color:#fff;font-weight:600;line-height:1.4;margin-bottom:32px;">
           Did not find substantial opposition<br>to Prison Island naming.
         </div>
         <div style="border-left:2px solid #E8630A;padding-left:18px;margin-bottom:32px;">
-          <div style="font-size:13px;color:#777;line-height:1.9;">
+          <div style="font-size:13px;color:#fff;line-height:1.9;">
             Cold ratings for Prison Island and BRKThrough landed near-identical (~3/5).<br>
             Head-to-head preference was close: 45% draw, 29% lean Prison Island, 26% lean BRKThrough.<br>
             Crowd wisdom split 52/48 \\u2014 no consensus that one name is clearly better.<br>
