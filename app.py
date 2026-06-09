@@ -1316,7 +1316,10 @@ _NEW_PRESENTATION_HTML = """
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0e1117; color: #fafafa; overflow: hidden; height: 100vh; }
-#app { display: flex; height: 100vh; }
+#outer { display: flex; flex-direction: column; height: 100vh; }
+#top-bar { height: 44px; flex-shrink: 0; display: flex; align-items: center; padding: 0 24px; border-bottom: 1px solid #161616; background: #090a0f; }
+#top-headline { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0.01em; transition: opacity 0.28s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#app { display: flex; flex: 1; min-height: 0; }
 
 #panel {
   width: 268px; flex-shrink: 0; display: flex; flex-direction: column;
@@ -1384,6 +1387,8 @@ svg { width: 100%; height: 100%; overflow: visible; }
 </style>
 </head>
 <body>
+<div id="outer">
+<div id="top-bar"><span id="top-headline"></span></div>
 <div id="app">
   <div id="panel">
     <div id="slide-num"></div>
@@ -1535,6 +1540,7 @@ const sl = v => SHORT[v] || (v.length > 20 ? v.slice(0,18)+"\\u2026" : v);
 // ── Slides ────────────────────────────────────────────────────────────────────
 const SLIDES = [
   {
+    headline: "Prison Island Indianapolis Naming, v1. Click arrows on bottom left, or use keyboard arrows, to navigate",
     title: "Executive summary",
     sub: "Prison Island naming study \\u00b7 258 respondents \\u00b7 6 US cities",
     body: "",
@@ -1559,36 +1565,42 @@ const SLIDES = [
     `,
   },
   {
+    headline: "",
     title: "258 people",
     sub: "6 cities \\u00b7 leisure-goers across the US",
     body: "Experience-goers across New York, Los Angeles, Chicago, Denver, Dallas and Cincinnati were shown the Prison Island concept and asked a series of questions. Each dot is one person.",
     group: "city", color: "city", hideLegend: true,
   },
   {
+    headline: "",
     title: "Who they are",
     sub: "Age distribution \\u00b7 coloured by city",
     body: "The 35\\u201344 band is the largest cohort \\u2014 and the core audience for a physical, competitive experience. They are regular concert-goers, cinema-goers, escape room players. The 25\\u201334 group is the next largest.",
     group: "age", color: "city",
   },
   {
+    headline: "This Fever audience is already primed for the category \\u2014 and the core age group skews competitive.",
     title: "What they do",
     sub: "Ticketed formats attended in the last 5 years \\u00b7 multi-select",
-    body: "Music, cinema, museums, and theatre top the list \\u2014 but Immersive Experiences rank fifth out of nine, ahead of nightlife and comedy. This audience is already primed for the category. Each dot is one format selection; respondents appear once per format they picked.",
+    body: "Music, cinema, museums, and theatre top the list \\u2014 but Immersive Experiences rank fifth out of nine, ahead of nightlife and comedy. The 35\\u201344 cohort over-indexes most strongly on Sports & Competitions (+9pp above base) \\u2014 the format closest in spirit to Prison Island. The audience is not just category-aware; the biggest group in it leans competitive.",
     multi: { field: "formats", order: FORMATS_ORDER, colors: COLORS.formats, yField: "age", yOrder: AGE_ORDER },
   },
   {
-    title: "First reaction",
-    sub: "We described the format in words \\u2014 no name, no branding \\u2014 and asked how people felt. Columns run left to right: least interested \\u2192 most interested.",
-    body: "Over a third were already interested or enthusiastic on first read \\u2014 before any name was mentioned. A further 8% had done this themselves. Only 18% were not for it or unsure. The concept generates genuine pull; the name question starts from a position of interest, not indifference.",
+    headline: "Half of respondents hadn\\u2019t come across one of these before, but most of them were interested. Target audience appears to be 25\\u201355.",
+    title: "Cold reception",
+    sub: "Concept described in words only \\u2014 no name, no branding. How did people react?",
+    body: "25\\u201354 is where discovery is cleanest: 66\\u201369% had never seen this and immediately wanted to go. The 35\\u201344 core skews more familiar \\u2014 26% already do this. Above 55, the concept polarises.",
     group: "reaction", color: "reaction", yField: "age",
   },
   {
+    headline: "",
     title: "So what about the name?",
     sub: "The question this survey was built to answer",
     body: "Respondents were split into two groups. One saw Prison Island first, then BRKThrough. The other saw BRKThrough first, then Prison Island. Both groups were then asked to compare. The question: does the name Prison Island get in the way?",
     group: null, color: "survey_group",
   },
   {
+    headline: "Similar averages, but BRKThrough attracts more enthusiasm and fewer hard rejections cold.",
     title: "First impressions",
     sub: "Cold rating of first event seen \\u00b7 1\\u20135 likelihood to attend",
     body: "Prison Island and BRKThrough both land around 3 out of 5. Neither name excites on its own. Neither name repels. The starting point is identical \\u2014 the name alone is not moving the needle either way.",
@@ -1596,6 +1608,7 @@ const SLIDES = [
 
   },
   {
+    headline: "We asked people which they preferred. Prison Island vs. BRKThrough was a near-draw. Glow or Go vs. BRKThrough was a landslide.",
     title: "Head to head",
     sub: "After seeing both names \\u00b7 top row: PI study \\u00b7 bottom row: GoG study",
     body: "45% call it a draw. 29% lean Prison Island. 26% lean BRKThrough. No name generates a runaway lead \\u2014 and no name generates a backlash.",
@@ -1603,33 +1616,38 @@ const SLIDES = [
 
   },
   {
+    headline: "Crowd prediction: BRKThrough vs. Prison Island was 52\\u201348. BRKThrough vs. Glow or Go was 59\\u201341 \\u2014 a clearer verdict.",
     title: "Wisdom of crowd",
     sub: "Which name do most people prefer? \\u00b7 n=88 who answered",
     body: "When asked to predict the crowd rather than state their own preference: 52% say BRKThrough, 48% say Prison Island. The split mirrors the head-to-head almost exactly. There is no consensus that the crowd prefers one name over the other.",
     group: "crowd_unified", color: "city", yField: "study",
   },
   {
-    title: "Who\\u2019s it for? Prison Island",
-    sub: "Audience expectations \\u00b7 multi-select \\u00b7 Prison Island study respondents",
-    body: "Prison Island reads as a friends-and-adults experience \\u2014 mature groups, birthdays, and work teams in that order.",
+    headline: "Prison Island owns the adult social occasion. BRKThrough leads on families with kids (42% vs 24%) and work teams (58% vs 47%).",
+    title: "Who\\u2019s it for?",
+    sub: "Audience expectations \\u00b7 multi-select \\u00b7 compared to BRKThrough",
+    body: "Prison Island over-indexes on mature friend groups (+8pp vs BRKThrough) and adult-only families (+9pp). BRKThrough pulls ahead on families with kids (+18pp) and work teams (+10pp). The name signals an edgier, grown-up night out \\u2014 which is an asset for the target audience, and a natural ceiling for the family and corporate market.",
     multi: { field:"pi_groups", order:GROUPS_ORDER, colors:COLORS.groups, yField:"age", yOrder:AGE_ORDER },
     cohort: { field:"survey_group", vals:["PI-first","BRK-first"] },
   },
   // archived: Who's it for? BRKThrough (multi, brk_groups, yField:age)
   // archived: Who's it for? Glow or Go (multi, gog_groups, yField:age, cohort:GoG study)
   {
+    headline: "All three concepts anchor price expectations in the same band \\u2014 median $30\\u201332, mean $33\\u201335 across the board.",
     title: "What would they pay?",
     sub: "Expected ticket price \\u00b7 one dot per event rated \\u00b7 respondents may appear in multiple rows",
     body: "All three events anchor around the $25\\u201334 band. Neither name is dramatically repricing expectations upward or downward.",
     priceRows: true,
   },
   {
+    headline: "Open responses show no notable backlash to the Prison Island name.",
     title: "What they said",
     sub: "Open-ended responses \\u00b7 mentions of \\u2018prison\\u2019 or \\u2018name\\u2019 in orange",
     body: "Verbatim feedback from respondents who added a comment at the end of the survey.",
     qualitative: true,
   },
   {
+    headline: "What’s next.",
     title: "What\\u2019s next",
     sub: "Next steps",
     body: "",
@@ -1666,7 +1684,7 @@ const DIMS = [
   {key:"pi_rate",      label:"PI rating",    field:"pi_rate",      order:RATE_ORDER,         colors:COLORS.rating},
   {key:"brk_pi_rate",  label:"BRK rating",   field:"brk_pi_rate",  order:RATE_ORDER,         colors:COLORS.rating},
   {key:"cold_rate",    label:"Cold rating",  field:"cold_rate",    order:RATE_ORDER,         colors:COLORS.rating},
-  {key:"first_event",  label:"First event",  field:"first_event",  order:["BRKThrough","Glow or Go","Prison Island"], colors:{"Prison Island":"#E8630A","Glow or Go":"#E91E8C","BRKThrough":"#4C6EF5","\\u2014":"#1e1e1e"}},
+  {key:"first_event",  label:"First event",  field:"first_event",  order:["Prison Island","BRKThrough","Glow or Go"], colors:{"Prison Island":"#E8630A","Glow or Go":"#E91E8C","BRKThrough":"#4C6EF5","\\u2014":"#1e1e1e"}},
   {key:"pi_vs_brk",    label:"PI vs BRK",    field:"pi_vs_brk",    order:PI_BRK_ORDER,       colors:COLORS.pi_vs_brk},
   {key:"h2h",          label:"Head to head", field:"h2h",          order:H2H_ORDER,          colors:H2H_COLORS},
   {key:"study",        label:"Study",        field:"study",        order:["GoG study","PI study"], colors:{"PI study":"#aaa","GoG study":"#aaa","\\u2014":"#1e1e1e"}},
@@ -2702,12 +2720,15 @@ function showSlide(idx) {
     tw.style.display="block";
     ew.style.display="none";
     ["slide-title","slide-sub","slide-body"].forEach(id=>{document.getElementById(id).style.opacity="0";});
+    const hlEl=document.getElementById("top-headline");
+    hlEl.style.opacity="0";
     setTimeout(()=>{
       document.getElementById("slide-title").textContent=s.title;
       const subEl=document.getElementById("slide-sub");
       subEl.textContent=s.sub||""; subEl.style.display=s.sub?"":"none";
       document.getElementById("slide-body").innerHTML=s.body||"";
       ["slide-title","slide-sub","slide-body"].forEach(id=>{document.getElementById(id).style.opacity="1";});
+      hlEl.textContent=s.headline||""; hlEl.style.opacity="1";
     },280);
 
     if(s.textOnly) {
@@ -2788,6 +2809,7 @@ buildExpButtons();
 buildProgress();
 requestAnimationFrame(()=>{initChart();showSlide(0);});
 </script>
+</div>
 </body>
 </html>
 """
@@ -3364,34 +3386,48 @@ def show_by_city(fdf, use_pct):
 
 def main():
     st.set_page_config(page_title="Prison Island — Naming Feedback", layout="wide")
-    st.title("Prison Island — Naming Feedback Dashboard")
+    st.markdown("""<style>
+        [data-testid="stSidebar"], [data-testid="collapsedControl"] { display: none !important; }
+        /* Hide Streamlit's own top toolbar and tighten padding */
+        [data-testid="stHeader"] { display: none !important; }
+        .block-container { padding-top: 0.5rem !important; padding-bottom: 0 !important; }
+        /* Fix all radio groups to bottom-right corner */
+        [data-testid="stRadio"] {
+            position: fixed !important;
+            bottom: 18px !important;
+            right: 22px !important;
+            z-index: 9999;
+            background: transparent;
+        }
+        [data-testid="stRadio"] > div {
+            gap: 2px;
+            flex-direction: row;
+        }
+        /* Discrete pill style for radio options */
+        [data-testid="stRadio"] label {
+            font-size: 11px !important;
+            color: #444 !important;
+            padding: 3px 10px !important;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+        [data-testid="stRadio"] label:hover { color: #999 !important; }
+        [data-testid="stRadio"] label[data-checked="true"],
+        [data-testid="stRadio"] label[aria-checked="true"] { color: #ccc !important; }
+        /* Hide the radio circle dots */
+        [data-testid="stRadio"] input[type="radio"] { display: none !important; }
+    </style>""", unsafe_allow_html=True)
 
     df = load_data()
+    fdf = df  # no filters in current embodiment
 
-    st.sidebar.header("Filters")
-    cities   = st.sidebar.multiselect("City (C)",    sorted(df["_city"].unique()))
-    groups   = st.sidebar.multiselect("Group (G)",   sorted(df["_group"].unique()))
-    jails    = st.sidebar.multiselect("Jail (J)",    sorted(df["_jail"].unique()))
+    page = st.radio("", ["Story", "Explore"], horizontal=True, label_visibility="collapsed")
 
-    st.sidebar.divider()
-    use_pct = st.sidebar.toggle("Show as percentages", value=False)
-
-    st.sidebar.divider()
-    page = st.sidebar.radio("View", ["New Deck", "Archive", "Explore", "Overview", "By City"])
-
-    fdf = apply_filters(df, cities, groups, jails)
-    st.caption(f"Showing **{len(fdf)}** of **{len(df)}** responses")
-
-    if page == "New Deck":
+    if page == "Story":
         show_new_presentation(fdf)
-    elif page == "Archive":
-        show_presentation(fdf)
     elif page == "Explore":
         show_beeswarm(fdf)
-    elif page == "Overview":
-        show_overview(fdf, use_pct)
-    else:
-        show_by_city(fdf, use_pct)
 
 
 if __name__ == "__main__":
