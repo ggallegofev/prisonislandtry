@@ -92,7 +92,9 @@ body {
 }
 #app { width: 100%; height: 100vh; display: flex; flex-direction: column; }
 #controls { padding: 12px 20px 0; display: flex; flex-direction: column; gap: 7px; }
-.ctrl-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.ctrl-row { display: flex; align-items: center; gap: 7px; overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+.ctrl-row::-webkit-scrollbar { display: none; }
+#group-btns, #color-btns { display: flex !important; gap: 6px; flex-wrap: nowrap !important; }
 .row-label {
   font-size: 10px; color: #555; letter-spacing: 0.08em;
   text-transform: uppercase; width: 58px; flex-shrink: 0;
@@ -119,7 +121,32 @@ body {
 .leg-item.leg-dimmed { opacity: 0.35; }
 .leg-sw { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .leg-pct { margin-left: auto; color: #aaa; font-size: 10px; font-variant-numeric: tabular-nums; }
+#main-row { display: flex; flex: 1; min-height: 0; }
 #chart-wrap { flex: 1; min-height: 0; position: relative; }
+#summary-panel {
+  width: 230px; flex-shrink: 0; border-left: 1px solid #161616;
+  background: #090a0f; overflow-y: auto; padding: 14px 0 8px;
+  display: flex; flex-direction: column;
+}
+#summary-hint {
+  color: #333; font-size: 11px; padding: 20px 16px; line-height: 1.6;
+}
+#summary-table-wrap { padding: 0 0 8px; }
+.st-head {
+  font-size: 9px; color: #333; text-transform: uppercase;
+  letter-spacing: .1em; padding: 0 16px 6px;
+}
+.st-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 3px 16px; font-size: 11px; color: #888;
+  transition: opacity .2s;
+}
+.st-row.st-dimmed { opacity: 0.22; }
+.st-row.st-sub { padding-left: 32px; color: #555; font-size: 10px; }
+.st-swatch { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.st-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-n { color: #444; font-variant-numeric: tabular-nums; font-size: 10px; flex-shrink: 0; }
+.st-pct { color: #666; font-variant-numeric: tabular-nums; font-size: 10px; width: 34px; text-align: right; flex-shrink: 0; }
 svg { width: 100%; height: 100%; overflow: visible; }
 #tooltip {
   position: fixed; display: none;
@@ -162,7 +189,13 @@ svg { width: 100%; height: 100%; overflow: visible; }
   </div>
   <div id="narrative"></div>
   <div id="legend"></div>
-  <div id="chart-wrap"><svg id="chart"></svg></div>
+  <div id="main-row">
+    <div id="chart-wrap"><svg id="chart"></svg></div>
+    <div id="summary-panel">
+      <div id="summary-hint">Select a dimension above to see a breakdown.</div>
+      <div id="summary-table-wrap"></div>
+    </div>
+  </div>
 </div>
 <div id="tooltip"></div>
 <div id="col-detail"></div>
@@ -170,12 +203,17 @@ svg { width: 100%; height: 100%; overflow: visible; }
 <script>
 const RAW = __DATA__;
 
-const AGE_ORDER     = ["18-24","25-34","35-44","45-54","55-64","65-74","75-84","Skip question","Unknown"];
-const CITY_ORDER    = ["New York","Los Angeles","Chicago","Denver","Dallas","Cincinnati","Unknown"];
-const FREQ_ORDER    = ["More than once a week","Once a week","Every other week","Once or twice a month","Every other month","Once or twice a year","Less than that","Unknown"];
-const RATE_ORDER    = ["1","2","3","4","5","—"];
-const PI_BRK_ORDER  = ["BRKThrough is much better","BRKThrough is slightly better","They're about the same","Prison Island is slightly better","Prison Island is much better","—"];
-const BRK_GOG_ORDER = ["BRKThrough is much better","BRKThrough is slightly better","They're about the same","Glow or Go is slightly better","Glow or Go is much better","—"];
+const AGE_ORDER          = ["18-24","25-34","35-44","45-54","55-64","65-74","75-84","Skip question","Unknown"];
+const CITY_ORDER         = ["New York","Los Angeles","Chicago","Denver","Dallas","Cincinnati","Unknown"];
+const FREQ_ORDER         = ["More than once a week","Once a week","Every other week","Once or twice a month","Every other month","Once or twice a year","Less than that","Unknown"];
+const RATE_ORDER         = ["1","2","3","4","5","—"];
+const PI_BRK_ORDER       = ["BRKThrough is much better","BRKThrough is slightly better","They're about the same","Prison Island is slightly better","Prison Island is much better","—"];
+const BRK_GOG_ORDER      = ["BRKThrough is much better","BRKThrough is slightly better","They're about the same","Glow or Go is slightly better","Glow or Go is much better","—"];
+const SURVEY_GROUP_ORDER = ["PI-first","BRK-first","GoG-first","BRK-vs-GoG","—"];
+const REACTION_ORDER     = ["Just found out, interested","Really enjoy these","Done this myself","Just found out, not for me","Knew this, not for me","Know people who do this","Know people who'd like it","—"];
+const H2H_ORDER          = ["much prefer BRK","slightly prefer BRK","about the same","slightly prefer PI/GoG","much prefer PI/GoG","—"];
+const CROWD_ORDER        = ["Prison Island","BRKThrough","Glow or Go","—"];
+const STUDY_ORDER        = ["PI study","GoG study","—"];
 
 const SHORT = {
   "More than once a week":"  >1/wk","Once a week":"1/wk",
@@ -224,6 +262,24 @@ const COLORS = {
     "Glow or Go is much better":"#E91E8C",
     "—":"#252525",
   },
+  survey_group: {
+    "PI-first":"#E8630A","BRK-first":"#4C6EF5","GoG-first":"#E91E8C","BRK-vs-GoG":"#9966FF","—":"#252525",
+  },
+  reaction: {
+    "Just found out, interested":"#2ECC71","Really enjoy these":"#16A085","Done this myself":"#F1C40F",
+    "Just found out, not for me":"#E67E22","Knew this, not for me":"#E74C3C",
+    "Know people who do this":"#8FA8FF","Know people who'd like it":"#4C6EF5","—":"#252525",
+  },
+  h2h: {
+    "much prefer BRK":"#4C6EF5","slightly prefer BRK":"#8FA8FF","about the same":"#777",
+    "slightly prefer PI/GoG":"#FFAA66","much prefer PI/GoG":"#E8630A","—":"#252525",
+  },
+  crowd: {
+    "Prison Island":"#E8630A","BRKThrough":"#4C6EF5","Glow or Go":"#E91E8C","—":"#252525",
+  },
+  study: {
+    "PI study":"#E8630A","GoG study":"#E91E8C","—":"#252525",
+  },
 };
 
 const DIMS = [
@@ -235,15 +291,21 @@ const DIMS = [
   {key:"gog_rate",  label:"GoG rating",  field:"gog_rate",   order:RATE_ORDER,    colors:COLORS.rating},
   {key:"pi_vs_brk", label:"PI vs BRK",   field:"pi_vs_brk",  order:PI_BRK_ORDER,  colors:COLORS.pi_vs_brk},
   {key:"brk_vs_gog",label:"BRK vs GoG",  field:"brk_vs_gog", order:BRK_GOG_ORDER, colors:COLORS.brk_vs_gog},
+  {key:"survey_group", label:"Survey group",  field:"survey_group", order:SURVEY_GROUP_ORDER, colors:COLORS.survey_group},
+  {key:"reaction",     label:"1st reaction",  field:"reaction",     order:REACTION_ORDER,     colors:COLORS.reaction},
+  {key:"cold_rate",    label:"Cold rating",   field:"cold_rate",    order:RATE_ORDER,          colors:COLORS.rating},
+  {key:"h2h",          label:"Head to head",  field:"h2h",          order:H2H_ORDER,           colors:COLORS.h2h},
+  {key:"crowd_unified",label:"Crowd pick",    field:"crowd_unified",order:CROWD_ORDER,          colors:COLORS.crowd},
+  {key:"study",        label:"Study",         field:"study",        order:STUDY_ORDER,          colors:COLORS.study},
 ];
 const DIM_MAP = Object.fromEntries(DIMS.map(d => [d.key, d]));
 
 // Normalise null → "—" for all rating / choice fields
 RAW.forEach(d => {
-  ["pi_rate","brk_rate","gog_rate"].forEach(f => {
+  ["pi_rate","brk_rate","gog_rate","cold_rate"].forEach(f => {
     d[f] = (d[f] === null || d[f] === undefined) ? "—" : String(d[f]);
   });
-  ["pi_vs_brk","brk_vs_gog"].forEach(f => {
+  ["pi_vs_brk","brk_vs_gog","h2h","crowd_unified","survey_group","reaction","study"].forEach(f => {
     if (!d[f] || d[f] === "nan") d[f] = "—";
   });
   if (!d.freq || d.freq === "nan") d.freq = "Unknown";
@@ -318,6 +380,7 @@ function recolor() {
   if (filterVal !== null) { applyFilter(filterField, filterVal, false); return; }
   circles.transition().duration(1100).ease(d3.easeCubicInOut)
     .attr("fill", d => dotColor(d)).attr("fill-opacity", 0.88);
+  renderTable();
 }
 
 // ── Legend filter ─────────────────────────────────────────────────────────────
@@ -328,6 +391,7 @@ function applyFilter(field, val, updateLegend) {
     .attr("fill-opacity", d => d[field] === val ? 0.92 : 0.10);
   updateColLabels();
   if (updateLegend !== false) refreshLegendFilter();
+  renderTable();
 }
 function clearFilter() {
   filterField = null; filterVal = null;
@@ -336,6 +400,7 @@ function clearFilter() {
     .attr("fill-opacity", groupKey ? 0.88 : 0.65);
   updateColLabels();
   refreshLegendFilter();
+  renderTable();
 }
 function refreshLegendFilter() {
   legendEl.querySelectorAll(".leg-item").forEach(el => {
@@ -374,6 +439,64 @@ function updateNarrative() {
   const gL = DIM_MAP[groupKey].label;
   if (!colorKey) { narrativeEl.textContent = `${n} people · grouped by ${gL}`; }
   else { narrativeEl.textContent = `${n} people · grouped by ${gL} · coloured by ${DIM_MAP[colorKey].label}`; }
+}
+
+// ── Summary table ─────────────────────────────────────────────────────────────
+const summaryHint = document.getElementById("summary-hint");
+const summaryWrap = document.getElementById("summary-table-wrap");
+
+function renderTable() {
+  summaryWrap.innerHTML = "";
+  if (!groupKey) {
+    summaryHint.style.display = "block";
+    return;
+  }
+  summaryHint.style.display = "none";
+  const gDim = DIM_MAP[groupKey];
+  const cDim = colorKey ? DIM_MAP[colorKey] : null;
+  const pool = (filterVal !== null) ? nodes.filter(d => d[filterField] === filterVal) : nodes;
+  const groupVals = gDim.order.filter(v => nodes.some(d => d[gDim.field] === String(v)));
+  const total = groupVals.reduce((s, v) => s + pool.filter(d => d[gDim.field] === String(v)).length, 0);
+
+  const head = document.createElement("div");
+  head.className = "st-head";
+  head.textContent = gDim.label + (cDim ? "  ·  " + cDim.label : "");
+  summaryWrap.appendChild(head);
+
+  groupVals.forEach(v => {
+    const vStr = String(v);
+    const grpNodes = pool.filter(d => d[gDim.field] === vStr);
+    const n = grpNodes.length;
+    const pct = total > 0 ? Math.round(n / total * 100) : 0;
+    const col = gDim.colors[vStr] || "#888";
+    const isDimmed = filterVal !== null && !(filterField === gDim.field && filterVal === vStr);
+
+    const row = document.createElement("div");
+    row.className = "st-row" + (isDimmed ? " st-dimmed" : "");
+    row.innerHTML = `<div class="st-swatch" style="background:${col}"></div>` +
+      `<span class="st-label">${vStr}</span>` +
+      `<span class="st-n">n=${n}</span>` +
+      `<span class="st-pct">${pct}%</span>`;
+    summaryWrap.appendChild(row);
+
+    if (cDim && cDim !== gDim && n > 0) {
+      const cVals = cDim.order.filter(cv => grpNodes.some(d => d[cDim.field] === String(cv)));
+      cVals.forEach(cv => {
+        const cvStr = String(cv);
+        const cn = grpNodes.filter(d => d[cDim.field] === cvStr).length;
+        if (!cn) return;
+        const cpct = Math.round(cn / n * 100);
+        const ccol = cDim.colors[cvStr] || "#666";
+        const sub = document.createElement("div");
+        sub.className = "st-row st-sub" + (isDimmed ? " st-dimmed" : "");
+        sub.innerHTML = `<div class="st-swatch" style="background:${ccol}"></div>` +
+          `<span class="st-label">${cvStr}</span>` +
+          `<span class="st-n">${cn}</span>` +
+          `<span class="st-pct">${cpct}%</span>`;
+        summaryWrap.appendChild(sub);
+      });
+    }
+  });
 }
 
 // ── Column positions ─────────────────────────────────────────────────────────
@@ -478,7 +601,7 @@ function go() {
   const eff = colorKey ? DIM_MAP[colorKey] : DIM_MAP[groupKey];
   colState = { cols, dim: DIM_MAP[groupKey], eff };
   updateColLabels();
-  refreshGroupBtns(); refreshColorBtns(); renderLegend(); updateNarrative();
+  refreshGroupBtns(); refreshColorBtns(); renderLegend(); updateNarrative(); renderTable();
 }
 
 // ── Idle ─────────────────────────────────────────────────────────────────────
@@ -492,7 +615,7 @@ function idle() {
     .attr("fill", IDLE).attr("fill-opacity", 0.65);
   svg.selectAll(".col-label").remove();
   legendEl.innerHTML = "";
-  refreshGroupBtns(); refreshColorBtns(); updateNarrative();
+  refreshGroupBtns(); refreshColorBtns(); updateNarrative(); renderTable();
 }
 
 // ── Tooltip ──────────────────────────────────────────────────────────────────
@@ -504,11 +627,15 @@ function onHover(event, d) {
   tooltipEl.innerHTML =
     tr("Age", d.age) + tr("City", d.city) + tr("Frequency", d.freq) +
     tr("Attends with", d.t_who) +
-    (d.pi_rate  !== "—" ? tr("PI rating",  d.pi_rate  + " / 5") : "") +
-    (d.brk_rate !== "—" ? tr("BRK rating", d.brk_rate + " / 5") : "") +
-    (d.gog_rate !== "—" ? tr("GoG rating", d.gog_rate + " / 5") : "") +
-    tr("PI vs BRK",  d.pi_vs_brk) + tr("BRK vs GoG", d.brk_vs_gog) +
-    (d.t_reaction ? tr("Reaction", d.t_reaction.length > 68 ? d.t_reaction.slice(0,68)+"…" : d.t_reaction) : "");
+    tr("Survey group", d.survey_group) +
+    tr("1st reaction", d.reaction) +
+    (d.cold_rate !== "—" ? tr("Cold rating", d.cold_rate + " / 5") : "") +
+    (d.pi_rate   !== "—" ? tr("PI rating",   d.pi_rate   + " / 5") : "") +
+    (d.brk_rate  !== "—" ? tr("BRK rating",  d.brk_rate  + " / 5") : "") +
+    (d.gog_rate  !== "—" ? tr("GoG rating",  d.gog_rate  + " / 5") : "") +
+    tr("Head to head", d.h2h) +
+    tr("Crowd pick",   d.crowd_unified) +
+    tr("PI vs BRK",    d.pi_vs_brk) + tr("BRK vs GoG", d.brk_vs_gog);
   tooltipEl.style.display = "block";
   d3.select(this).raise().attr("r", R+2.5).attr("stroke","#fff").attr("stroke-width",1.5).attr("fill-opacity",1);
   posTooltip(event);
@@ -580,12 +707,63 @@ def show_beeswarm(fdf):
                 return c
         return None
 
+    def is_num(x):
+        try: float(x); return True
+        except (ValueError, TypeError): return False
+
+    def survey_group_val(row):
+        if pd.notna(row.iloc[7])  and is_num(row.iloc[7]):  return "PI-first"
+        if pd.notna(row.iloc[9])  and is_num(row.iloc[9]):  return "BRK-first"
+        if pd.notna(row.iloc[11]) and is_num(row.iloc[11]): return "GoG-first"
+        if pd.notna(row.iloc[13]) and is_num(row.iloc[13]): return "BRK-vs-GoG"
+        return "—"
+
+    def reaction_val(row):
+        v = clean(row.iloc[4])
+        return v.split(",")[0].strip() if v and v != "nan" else "—"
+
+    def cold_rate_val(row, sg):
+        if sg == "PI-first":    return first_rate(row, 7)
+        if sg == "BRK-first":   return first_rate(row, 9)
+        if sg == "GoG-first":   return first_rate(row, 11)
+        if sg == "BRK-vs-GoG":  return first_rate(row, 13)
+        return None
+
+    PI_TO_H2H = {
+        "BRKThrough is much better":        "much prefer BRK",
+        "BRKThrough is slightly better":    "slightly prefer BRK",
+        "They're about the same":           "about the same",
+        "Prison Island is slightly better": "slightly prefer PI/GoG",
+        "Prison Island is much better":     "much prefer PI/GoG",
+    }
+    GOG_TO_H2H = {
+        "BRKThrough is much better":    "much prefer BRK",
+        "BRKThrough is slightly better":"slightly prefer BRK",
+        "They're about the same":       "about the same",
+        "Glow or Go is slightly better":"slightly prefer PI/GoG",
+        "Glow or Go is much better":    "much prefer PI/GoG",
+    }
+    def h2h_val(row, sg):
+        if sg in ("PI-first", "BRK-first"):
+            raw = first_clean(row, 15, 16)
+            return PI_TO_H2H.get(raw, "—") if raw else "—"
+        if sg in ("GoG-first", "BRK-vs-GoG"):
+            raw = first_clean(row, 17, 18)
+            return GOG_TO_H2H.get(raw, "—") if raw else "—"
+        return "—"
+
+    def crowd_unified_val(row, sg):
+        v = first_clean(row, 19) if sg in ("PI-first", "BRK-first") else first_clean(row, 20)
+        return v if v else "—"
+
     records = []
     for _, row in fdf.iterrows():
+        sg = survey_group_val(row)
+        cr = cold_rate_val(row, sg)
         records.append({
-            "age":        clean(row.iloc[3]) or "Unknown",
-            "city":       str(row["_city"]),
-            "freq":       clean(row.iloc[1]) or "Unknown",
+            "age":          clean(row.iloc[3]) or "Unknown",
+            "city":         str(row["_city"]),
+            "freq":         clean(row.iloc[1]) or "Unknown",
             "pi_rate":      first_rate(row, 7),
             "brk_rate":     first_rate(row, 9, 13),
             "brk_pi_rate":  first_rate(row, 9),
@@ -594,6 +772,12 @@ def show_beeswarm(fdf):
             "brk_vs_gog":   first_clean(row, 17, 18) or "—",
             "t_who":        clean(row.iloc[2]),
             "t_reaction":   clean(row.iloc[4]),
+            "survey_group": sg,
+            "reaction":     reaction_val(row),
+            "cold_rate":    cr,
+            "h2h":          h2h_val(row, sg),
+            "crowd_unified":crowd_unified_val(row, sg),
+            "study":        "PI study" if sg in ("PI-first","BRK-first") else ("GoG study" if sg in ("GoG-first","BRK-vs-GoG") else "—"),
         })
 
     html = _BEESWARM_HTML.replace("__DATA__", json.dumps(records))
