@@ -1428,7 +1428,18 @@ const AGE_ORDER     = ["18-24","25-34","35-44","45-54","55-64","65-74","75-84","
 const CITY_ORDER    = ["New York","Los Angeles","Chicago","Denver","Dallas","Cincinnati","Unknown"];
 const FREQ_ORDER    = ["More than once a week","Once a week","Every other week","Once or twice a month","Every other month","Once or twice a year","Less than that","Unknown"];
 const RATE_ORDER    = ["1","2","3","4","5","—"];
-const PI_BRK_ORDER  = ["BRKThrough is much better","BRKThrough is slightly better","They're about the same","Prison Island is slightly better","Prison Island is much better","—"];
+const PI_BRK_ORDER  = ["much prefer Breakthrough","slightly prefer Breakthrough","about the same","slightly prefer Prison Island","much prefer Prison Island","\u2014"];
+
+const PI_BRK_REMAP = {
+  "BRKThrough is much better":       "much prefer Breakthrough",
+  "BRKThrough is slightly better":   "slightly prefer Breakthrough",
+  "They're about the same":          "about the same",
+  "Prison Island is slightly better":"slightly prefer Prison Island",
+  "Prison Island is much better":    "much prefer Prison Island",
+};
+
+const H2H_ORDER  = ["much prefer Breakthrough","slightly prefer Breakthrough","about the same","slightly prefer Prison Island / GoG","much prefer Prison Island / GoG","\\u2014"];
+const H2H_COLORS = {"much prefer Breakthrough":"#4C6EF5","slightly prefer Breakthrough":"#8FA8FF","about the same":"#666","slightly prefer Prison Island / GoG":"#FFAA66","much prefer Prison Island / GoG":"#E8630A","\\u2014":"#1e1e1e"};
 
 const REACTION_REMAP = {
   "Don't know":                        "Don't get it",
@@ -1473,7 +1484,7 @@ const COLORS = {
   city: {"New York":"#2196F3","Los Angeles":"#FF9800","Chicago":"#4CAF50","Denver":"#9C27B0","Dallas":"#F44336","Cincinnati":"#00BCD4","Unknown":"#9E9E9E"},
   freq: {"More than once a week":"#FF4444","Once a week":"#FF7722","Every other week":"#FFCC00","Once or twice a month":"#88CC44","Every other month":"#44BBAA","Once or twice a year":"#4488FF","Less than that":"#9966FF","Unknown":"#555"},
   rating: {"1":"#E74C3C","2":"#E67E22","3":"#F1C40F","4":"#2ECC71","5":"#16A085","—":"#1e1e1e"},
-  pi_vs_brk: {"BRKThrough is much better":"#4C6EF5","BRKThrough is slightly better":"#8FA8FF","They're about the same":"#666","Prison Island is slightly better":"#FFAA66","Prison Island is much better":"#E8630A","—":"#1e1e1e"},
+  pi_vs_brk: {"much prefer Breakthrough":"#4C6EF5","slightly prefer Breakthrough":"#8FA8FF","about the same":"#666","slightly prefer Prison Island":"#FFAA66","much prefer Prison Island":"#E8630A","\u2014":"#1e1e1e"},
   reaction: {
     "Don't get it":               "#4a4a4a",
     "Didn't know, not for me":    "#c0392b",
@@ -1524,6 +1535,30 @@ const sl = v => SHORT[v] || (v.length > 20 ? v.slice(0,18)+"\\u2026" : v);
 // ── Slides ────────────────────────────────────────────────────────────────────
 const SLIDES = [
   {
+    title: "Executive summary",
+    sub: "Prison Island naming study \\u00b7 258 respondents \\u00b7 6 US cities",
+    body: "",
+    textOnly: `
+      <div style="max-width:500px;margin:0 auto;padding:48px 20px;">
+        <div style="font-size:22px;color:#ddd;font-weight:600;line-height:1.4;margin-bottom:32px;">
+          Did not find substantial opposition<br>to Prison Island naming.
+        </div>
+        <div style="border-left:2px solid #E8630A;padding-left:18px;margin-bottom:32px;">
+          <div style="font-size:13px;color:#777;line-height:1.9;">
+            Cold ratings for Prison Island and BRKThrough landed near-identical (~3/5).<br>
+            Head-to-head preference was close: 45% draw, 29% lean Prison Island, 26% lean BRKThrough.<br>
+            Crowd wisdom split 52/48 \\u2014 no consensus that one name is clearly better.<br>
+            No significant backlash to the Prison Island name in open-ended responses.
+          </div>
+        </div>
+        <div style="font-size:11px;color:#333;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Status</div>
+        <div style="font-size:13px;color:#555;line-height:1.8;">
+          Confirmatory study WIP \\u2014 refined questions, larger sample (~400). Results this week.
+        </div>
+      </div>
+    `,
+  },
+  {
     title: "258 people",
     sub: "6 cities \\u00b7 leisure-goers across the US",
     body: "Experience-goers across New York, Los Angeles, Chicago, Denver, Dallas and Cincinnati were shown the Prison Island concept and asked a series of questions. Each dot is one person.",
@@ -1548,65 +1583,78 @@ const SLIDES = [
     group: "reaction", color: "reaction", yField: "age",
   },
   {
-    title: "How we tested it",
-    sub: "Split-group design \\u00b7 controlling for order effects",
-    body: "258 respondents were split into four groups. Orange and blue saw Prison Island vs BRKThrough \\u2014 orange saw Prison Island first, blue saw BRKThrough first. Pink and purple saw Glow or Go vs BRKThrough \\u2014 pink saw Glow or Go first, purple saw BRKThrough first. From slide 6 onwards we show only the orange and blue cohort. The Glow or Go results are a separate story.",
-    group: "survey_group", color: "survey_group",
-  },
-  {
     title: "So what about the name?",
     sub: "The question this survey was built to answer",
     body: "Respondents were split into two groups. One saw Prison Island first, then BRKThrough. The other saw BRKThrough first, then Prison Island. Both groups were then asked to compare. The question: does the name Prison Island get in the way?",
-    group: null, color: "survey_group", piOnly: true,
+    group: null, color: "survey_group",
   },
   {
     title: "First impressions",
-    sub: "Likelihood to attend, rated 1\\u20135 \\u00b7 each group saw only one name cold",
+    sub: "Cold rating of first event seen \\u00b7 1\\u20135 likelihood to attend",
     body: "Prison Island and BRKThrough both land around 3 out of 5. Neither name excites on its own. Neither name repels. The starting point is identical \\u2014 the name alone is not moving the needle either way.",
-    dual: { left: "brk_pi_rate", leftLabel: "BRKThrough", right: "pi_rate", rightLabel: "Prison Island" },
-    piOnly: true,
+    group: "cold_rate", color: "first_event", yField: "first_event",
+
   },
   {
     title: "Head to head",
-    sub: "After seeing both names \\u00b7 coloured by which group saw which first",
-    body: "45% call it a draw. 29% lean Prison Island. 26% lean BRKThrough. No name generates a runaway lead \\u2014 and no name generates a backlash. Use the filter below to check whether order of exposure changes the result.",
-    group: "pi_vs_brk", color: "survey_group",
-    filterBtns: [
-      { label: "PI-first",  field: "survey_group", val: "PI-first"  },
-      { label: "BRK-first", field: "survey_group", val: "BRK-first" },
-    ],
-    piOnly: true,
+    sub: "After seeing both names \\u00b7 top row: PI study \\u00b7 bottom row: GoG study",
+    body: "45% call it a draw. 29% lean Prison Island. 26% lean BRKThrough. No name generates a runaway lead \\u2014 and no name generates a backlash.",
+    group: "h2h", color: "survey_group", yField: "study",
+
   },
   {
     title: "Wisdom of crowd",
     sub: "Which name do most people prefer? \\u00b7 n=88 who answered",
     body: "When asked to predict the crowd rather than state their own preference: 52% say BRKThrough, 48% say Prison Island. The split mirrors the head-to-head almost exactly. There is no consensus that the crowd prefers one name over the other.",
-    group: "crowd_pick", color: "city", piOnly: true,
+    group: "crowd_unified", color: "city", yField: "study",
   },
   {
-    title: "Who do they think it\\u2019s for?",
-    sub: "Audience expectations \\u00b7 multi-select \\u00b7 Prison Island vs BRKThrough",
-    body: "Prison Island reads as a friends-and-adults experience \\u2014 mature groups, birthdays, work teams in that order. BRKThrough skews more toward work groups and families with kids. Prison Island n=38 respondents; BRKThrough n=125 \\u2014 the larger sample reflects more respondents in that flow.",
-    dualMulti: { left: "pi_groups", leftLabel: "Prison Island", right: "brk_groups", rightLabel: "BRKThrough" },
-    piOnly: true,
+    title: "Who\\u2019s it for? Prison Island",
+    sub: "Audience expectations \\u00b7 multi-select \\u00b7 Prison Island study respondents",
+    body: "Prison Island reads as a friends-and-adults experience \\u2014 mature groups, birthdays, and work teams in that order.",
+    multi: { field:"pi_groups", order:GROUPS_ORDER, colors:COLORS.groups, yField:"age", yOrder:AGE_ORDER },
+    cohort: { field:"survey_group", vals:["PI-first","BRK-first"] },
   },
+  // archived: Who's it for? BRKThrough (multi, brk_groups, yField:age)
+  // archived: Who's it for? Glow or Go (multi, gog_groups, yField:age, cohort:GoG study)
   {
     title: "What would they pay?",
-    sub: "Expected ticket price \\u00b7 Prison Island n=42 \\u00b7 BRKThrough n=129",
-    body: "Both names anchor around the $25\\u201334 band. Prison Island shows a slightly wider spread toward higher prices, but the PI sample is one-third the size of the BRK sample. The name is not dramatically repricing expectations in either direction.",
-    dual: {
-      left: "pi_price_bucket", leftLabel: "Prison Island",
-      right: "brk_price_bucket", rightLabel: "BRKThrough",
-      vals: ["Under $25","$25\\u201334","$35\\u201344","$45\\u201354","$55+"],
-      colors: COLORS.price_bucket,
-    },
-    piOnly: true,
+    sub: "Expected ticket price \\u00b7 one dot per event rated \\u00b7 respondents may appear in multiple rows",
+    body: "All three events anchor around the $25\\u201334 band. Neither name is dramatically repricing expectations upward or downward.",
+    priceRows: true,
   },
   {
     title: "What they said",
     sub: "Open-ended responses \\u00b7 mentions of \\u2018prison\\u2019 or \\u2018name\\u2019 in orange",
     body: "Verbatim feedback from respondents who added a comment at the end of the survey.",
-    qualitative: true, piOnly: true,
+    qualitative: true,
+  },
+  {
+    title: "What\\u2019s next",
+    sub: "Next steps",
+    body: "",
+    textOnly: `
+      <div style="max-width:520px;margin:0 auto;padding:40px 20px;">
+        <p style="font-size:15px;color:#bbb;line-height:1.8;margin-bottom:28px;">
+          No red flags. Both names tested without generating any meaningful backlash,
+          and the audience responses were broadly positive across cities and age groups.
+          The head-to-head result is close \\u2014 which is itself a finding worth noting.
+        </p>
+        <p style="font-size:13px;color:#666;line-height:1.8;margin-bottom:32px;">
+          That said, the sample size is modest and the questions were designed as a first pass.
+          To be more confident in the direction, we recommend running this again with a slightly
+          refined question set and a larger respondent pool.
+        </p>
+        <div style="border-top:1px solid #1e1e1e;padding-top:24px;">
+          <div style="font-size:10px;color:#333;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;">This week</div>
+          <div style="font-size:13px;color:#555;line-height:2;">
+            \\u2192&nbsp; Revise question wording based on open-ended feedback<br>
+            \\u2192&nbsp; Increase sample to ~400 respondents<br>
+            \\u2192&nbsp; Re-run survey and compare results
+          </div>
+        </div>
+      </div>
+    `,
   },
 ];
 
@@ -1617,25 +1665,35 @@ const DIMS = [
   {key:"freq",         label:"Frequency",    field:"freq",         order:FREQ_ORDER,         colors:COLORS.freq},
   {key:"pi_rate",      label:"PI rating",    field:"pi_rate",      order:RATE_ORDER,         colors:COLORS.rating},
   {key:"brk_pi_rate",  label:"BRK rating",   field:"brk_pi_rate",  order:RATE_ORDER,         colors:COLORS.rating},
+  {key:"cold_rate",    label:"Cold rating",  field:"cold_rate",    order:RATE_ORDER,         colors:COLORS.rating},
+  {key:"first_event",  label:"First event",  field:"first_event",  order:["BRKThrough","Glow or Go","Prison Island"], colors:{"Prison Island":"#E8630A","Glow or Go":"#E91E8C","BRKThrough":"#4C6EF5","\\u2014":"#1e1e1e"}},
   {key:"pi_vs_brk",    label:"PI vs BRK",    field:"pi_vs_brk",    order:PI_BRK_ORDER,       colors:COLORS.pi_vs_brk},
+  {key:"h2h",          label:"Head to head", field:"h2h",          order:H2H_ORDER,          colors:H2H_COLORS},
+  {key:"study",        label:"Study",        field:"study",        order:["GoG study","PI study"], colors:{"PI study":"#aaa","GoG study":"#aaa","\\u2014":"#1e1e1e"}},
   {key:"reaction",     label:"Reaction",     field:"reaction",     order:REACTION_ORDER,     colors:COLORS.reaction},
   {key:"survey_group", label:"Survey group", field:"survey_group", order:SURVEY_GROUP_ORDER, colors:COLORS.survey_group},
   {key:"crowd_pick",   label:"Crowd pick",   field:"crowd_pick",   order:CROWD_PICK_ORDER,   colors:COLORS.crowd_pick},
+  {key:"crowd_unified",label:"Crowd pick",   field:"crowd_unified",order:["Prison Island","BRKThrough","Glow or Go","\\u2014"], colors:{"Prison Island":"#E8630A","BRKThrough":"#4C6EF5","Glow or Go":"#E91E8C","\\u2014":"#1e1e1e"}},
 ];
 const DIM_MAP = Object.fromEntries(DIMS.map(d => [d.key, d]));
 const Y_OMIT = new Set(["Skip question","Unknown"]);
 
 RAW.forEach(d => {
   ["pi_rate","brk_pi_rate"].forEach(f => { d[f] = d[f]===null ? "\\u2014" : String(d[f]); });
-  ["pi_vs_brk"].forEach(f => { if (!d[f]||d[f]==="nan") d[f]="\\u2014"; });
+  d.cold_rate = d.cold_rate===null||d.cold_rate===undefined ? "\\u2014" : String(d.cold_rate);
+  ["pi_vs_brk"].forEach(f => { if (!d[f]||d[f]==="nan") d[f]="\\u2014"; else if(PI_BRK_REMAP[d[f]]) d[f]=PI_BRK_REMAP[d[f]]; });
+  if (!d.h2h||d.h2h==="nan") d.h2h="\\u2014";
+  if (!d.study||d.study==="nan") d.study="\\u2014";
   if (!d.freq||d.freq==="nan")        d.freq="Unknown";
   if (!d.reaction||d.reaction==="nan") d.reaction="\\u2014";
   else if (REACTION_REMAP[d.reaction]) d.reaction=REACTION_REMAP[d.reaction];
   if (!d.survey_group||d.survey_group==="\\u2014"||d.survey_group==="nan") d.survey_group="—";
   if (!d.crowd_pick||d.crowd_pick==="") d.crowd_pick="\\u2014";
+  if (!d.crowd_unified||d.crowd_unified==="") d.crowd_unified="\\u2014";
   if (!Array.isArray(d.formats))       d.formats=[];
   if (!Array.isArray(d.pi_groups))     d.pi_groups=[];
   if (!Array.isArray(d.brk_groups))    d.brk_groups=[];
+  if (!Array.isArray(d.gog_groups))    d.gog_groups=[];
   if (!d.t_qual)                       d.t_qual="";
 });
 
@@ -1644,6 +1702,7 @@ const R = 5.5, IDLE_C = "#383838";
 const nodes = RAW.map((d,i) => Object.assign({x:0,y:0,vx:0,vy:0},d,{_i:i}));
 let W, H, circles, groupKey=null, colorKey=null;
 let filterField=null, filterVal=null;
+let cohortFilter=null;
 
 const svg       = d3.select("#chart");
 const tooltipEl = document.getElementById("tooltip");
@@ -1696,6 +1755,118 @@ function teardownMulti() {
   svg.selectAll(".mdot").remove();
   circles.attr("fill-opacity", groupKey ? 0.88 : 0.62);
   sim.on("tick", () => circles.attr("cx", d=>d.x).attr("cy", d=>d.y));
+}
+
+// ── goPriceRows: 3-row beeswarm, one row per event, exploded from price fields ──
+function goPriceRows() {
+  hideColDetail();
+  groupKey=null; colorKey=null; colState=null;
+  if (!W) return;
+
+  const PRICE_EVENT_COLORS = {"Prison Island":"#E8630A","BRKThrough":"#4C6EF5","Glow or Go":"#E91E8C"};
+  const PRICE_EVENT_ORDER  = ["Prison Island","BRKThrough","Glow or Go"];
+  const PRICE_ROWS = [
+    {field:"pi_price_bucket",  event:"Prison Island"},
+    {field:"brk_price_bucket", event:"BRKThrough"},
+    {field:"gog_price_bucket", event:"Glow or Go"},
+  ];
+  const PBORDER = ["Under $25","$25\\u201334","$35\\u201344","$45\\u201354","$55+"];
+
+  let vNodes = [];
+  nodes.forEach(d => {
+    PRICE_ROWS.forEach(({field, event}) => {
+      const val = d[field];
+      if (!val || val === "\\u2014") return;
+      vNodes.push(Object.assign({}, d, {vx:0, vy:0, _pb:val, _pe:event}));
+    });
+  });
+
+  const present = PBORDER.filter(v => vNodes.some(n => n._pb === v));
+  const yTop = 28, yBottom = H - 90;
+  const yPresent = PRICE_EVENT_ORDER.filter(e => vNodes.some(d => d._pe === e)).reverse();
+  const ny = yPresent.length;
+  const step = ny > 1 ? Math.min(90, (yBottom-yTop)/(ny-1)) : 0;
+  const cy = (yTop+yBottom)/2;
+  const yFor = Object.fromEntries(yPresent.map((v,i) => [v, ny===1?cy:cy-step*(ny-1)/2+i*step]));
+
+  const leftPad=68, rightPad=55, usable=W-leftPad-rightPad;
+  const xFor = Object.fromEntries(present.map((v,i) => [v, present.length===1?leftPad+usable/2:leftPad+(i/(present.length-1))*usable]));
+
+  vNodes.forEach(d => {
+    d.tx = xFor[d._pb] ?? leftPad+usable/2;
+    d.ty = yFor[d._pe] ?? H*.44;
+    d.x  = d.tx + (Math.random()-.5)*20;
+    d.y  = d.ty + (Math.random()-.5)*20;
+  });
+
+  circles.attr("fill-opacity", 0);
+  svg.selectAll(".mdot").remove();
+  const mCircles = svg.selectAll(".mdot").data(vNodes).join("circle")
+    .attr("class","mdot").attr("r",R)
+    .attr("cx",d=>d.x).attr("cy",d=>d.y)
+    .attr("fill",d=>PRICE_EVENT_COLORS[d._pe]||"#888").attr("fill-opacity",0.85)
+    .attr("stroke","none").style("cursor","pointer")
+    .on("mouseenter",function(event,d){
+      tooltipEl.innerHTML=tr("Event",d._pe)+tr("Price",d._pb)+tr("Age",d.age)+tr("City",d.city);
+      tooltipEl.style.display="block";
+      d3.select(this).raise().attr("r",R+2.5).attr("stroke","#fff").attr("stroke-width",1.5);
+      posTooltip(event);
+    })
+    .on("mousemove",e=>posTooltip(e))
+    .on("mouseleave",function(){
+      tooltipEl.style.display="none";
+      d3.select(this).attr("r",R).attr("stroke","none");
+    });
+
+  multiSim = d3.forceSimulation(vNodes)
+    .force("collide",d3.forceCollide(R+1.8).strength(0.8).iterations(2))
+    .force("x",d3.forceX(d=>d.tx).strength(0.09))
+    .force("y",d3.forceY(d=>d.ty).strength(0.22))
+    .alphaDecay(0.011).velocityDecay(0.30)
+    .on("tick",()=>mCircles.attr("cx",d=>d.x).attr("cy",d=>d.y));
+  multiSim.alpha(1.0).restart();
+
+  svg.selectAll(".col-label").remove();
+
+  // Y axis gridlines and labels
+  yPresent.forEach(v => {
+    const y = yFor[v];
+    svg.append("line").attr("class","col-label")
+      .attr("x1",leftPad-4).attr("x2",W-rightPad+4).attr("y1",y).attr("y2",y)
+      .attr("stroke","#1e1e1e").attr("stroke-width",1);
+    svg.append("text").attr("class","col-label")
+      .attr("x",leftPad-10).attr("y",y+4).attr("text-anchor","end")
+      .attr("fill","#555").attr("font-size","10px").text(v);
+  });
+
+  // X column labels (bottom)
+  const total = vNodes.length;
+  present.forEach(v => {
+    const x = xFor[v];
+    const count = vNodes.filter(d => d._pb === v).length;
+    svg.append("text").attr("class","col-label")
+      .attr("x",x).attr("y",H-66).attr("text-anchor","middle")
+      .attr("fill","#cccccc").attr("font-size","13px").attr("font-weight","600")
+      .text(Math.round(count/total*100)+"%");
+    svg.append("text").attr("class","col-label")
+      .attr("x",x).attr("y",H-48).attr("text-anchor","middle")
+      .attr("fill","#4a4a4a").attr("font-size","10px").text("n="+count);
+    const vParts = wrapLabel(sl(v));
+    const vEl = svg.append("text").attr("class","col-label")
+      .attr("x",x).attr("y",vParts.length>1?H-34:H-28).attr("text-anchor","middle")
+      .attr("fill","#aaaaaa").attr("font-size","12px");
+    vParts.forEach((p,i)=>vEl.append("tspan").attr("x",x).attr("dy",i===0?0:"1.25em").text(p));
+  });
+
+
+  // Legend: event names
+  legendEl.innerHTML="";
+  eventsPresent.forEach(e=>{
+    const n=vNodes.filter(d=>d._pe===e).length;
+    const el=document.createElement("div"); el.className="leg-item";
+    el.innerHTML=`<div class="leg-sw" style="background:${PRICE_EVENT_COLORS[e]}"></div><span>${e}</span><span class="leg-pct">n=${n}</span>`;
+    legendEl.appendChild(el);
+  });
 }
 
 // ── goDual (extended with optional vals + colorsObj) ──────────────────────────
@@ -1827,6 +1998,7 @@ function goMultiField(field, orderArr, colorsObj, yField, yOrder) {
   let vNodes = [];
   nodes.forEach(d => {
     if (piOnly&&GOG_GROUPS.has(d.survey_group)) return;
+    if (cohortFilter&&!cohortFilter.vals.has(d[cohortFilter.field])) return;
     const tags = d[field];
     if (!tags||tags.length===0) return;
     tags.forEach(tag => vNodes.push(Object.assign({},d,{vx:0,vy:0,_vtag:tag,_vfield:field})));
@@ -1908,11 +2080,13 @@ function goMultiField(field, orderArr, colorsObj, yField, yOrder) {
     svg.append("text").attr("class","col-label")
       .attr("x",x).attr("y",H-48).attr("text-anchor","middle")
       .attr("fill","#4a4a4a").attr("font-size","10px").text("n="+count);
-    // Clickable format name
-    svg.append("text").attr("class","col-label").style("cursor", yField ? "pointer" : "default")
-      .attr("x",x).attr("y",H-28).attr("text-anchor","middle")
-      .attr("fill", yField ? "#aaaaaa" : "#999999").attr("font-size","12px").text(sl(v))
-      .on("click", yField ? function(event) {
+    // Clickable format name (two-line wrap if long)
+    const vParts=wrapLabel(sl(v));
+    const vEl=svg.append("text").attr("class","col-label").style("cursor", yField ? "pointer" : "default")
+      .attr("x",x).attr("y",vParts.length>1?H-34:H-28).attr("text-anchor","middle")
+      .attr("fill", yField ? "#aaaaaa" : "#999999").attr("font-size","12px");
+    vParts.forEach((p,i)=>vEl.append("tspan").attr("x",x).attr("dy",i===0?0:"1.25em").text(p));
+    vEl.on("click", yField ? function(event) {
         event.stopPropagation();
         const tagNodes = nodes.filter(d => d[field] && d[field].includes(v));
         const n = tagNodes.length; if (!n) return;
@@ -1966,7 +2140,7 @@ function goMultiField(field, orderArr, colorsObj, yField, yOrder) {
 }
 
 // ── goDualMulti ───────────────────────────────────────────────────────────────
-function goDualMulti(leftField, leftLabel, rightField, rightLabel) {
+function goDualMulti(leftField, leftLabel, rightField, rightLabel, yField) {
   groupKey=null; colorKey=null;
   if (!W) return;
   svg.selectAll(".col-label").remove();
@@ -1974,7 +2148,8 @@ function goDualMulti(leftField, leftLabel, rightField, rightLabel) {
   circles.attr("fill-opacity",0);
   legendEl.innerHTML="";
 
-  const gap=32, pad=48, midX=W/2;
+  const yLeftPad=yField?68:48;
+  const gap=32, pad=yLeftPad, midX=W/2;
   const leftUsable=midX-gap/2-pad, rightUsable=W-(midX+gap/2)-pad;
 
   const piOnly=SLIDES[current]?.piOnly;
@@ -1984,6 +2159,24 @@ function goDualMulti(leftField, leftLabel, rightField, rightLabel) {
     (d[leftField]||[]).forEach(tag=>leftVNodes.push(Object.assign({},d,{vx:0,vy:0,_vtag:tag,_vside:"left",_vlabel:leftLabel})));
     (d[rightField]||[]).forEach(tag=>rightVNodes.push(Object.assign({},d,{vx:0,vy:0,_vtag:tag,_vside:"right",_vlabel:rightLabel})));
   });
+
+  // Y axis
+  const yTop=28, yBottom=H-90;
+  let yFor=null, yPresent=null;
+  if(yField){
+    const yDim=DIM_MAP[yField];
+    const allVTemp=[...leftVNodes,...rightVNodes];
+    yPresent=yDim.order.filter(v=>!Y_OMIT.has(v)&&allVTemp.some(d=>d[yField]===v)).reverse();
+    const ny=yPresent.length;
+    const step=ny>1?Math.min(90,(yBottom-yTop)/(ny-1)):0;
+    const cy=(yTop+yBottom)/2;
+    yFor=Object.fromEntries(yPresent.map((v,i)=>[v,ny===1?cy:cy-step*(ny-1)/2+i*step]));
+    // filter out nodes with no Y position
+    const keep=v=>yFor[v]!==undefined;
+    leftVNodes.splice(0,leftVNodes.length,...leftVNodes.filter(d=>keep(d[yField])));
+    rightVNodes.splice(0,rightVNodes.length,...rightVNodes.filter(d=>keep(d[yField])));
+  }
+
   const allV=[...leftVNodes,...rightVNodes];
 
   const leftPresent  = GROUPS_ORDER.filter(v=>leftVNodes.some(d=>d._vtag===v));
@@ -1995,8 +2188,9 @@ function goDualMulti(leftField, leftLabel, rightField, rightLabel) {
   allV.forEach(d=>{
     const xFor=d._vside==="left"?lXFor:rXFor;
     d.tx=xFor[d._vtag]??(d._vside==="left"?midX/2:midX+midX/2);
+    d.ty=yFor?(yFor[d[yField]]??H*.44):H*.44;
     d.x=d.tx+(Math.random()-.5)*20;
-    d.y=H*.44+(Math.random()-.5)*60;
+    d.y=d.ty+(Math.random()-.5)*40;
   });
 
   const dualMultiCircles=svg.selectAll(".mdot").data(allV).join("circle")
@@ -2019,7 +2213,7 @@ function goDualMulti(leftField, leftLabel, rightField, rightLabel) {
   dualSim=d3.forceSimulation(allV)
     .force("collide",d3.forceCollide(R+1.8).strength(0.8).iterations(2))
     .force("x",d3.forceX(d=>d.tx).strength(0.09))
-    .force("y",d3.forceY(H*.44).strength(0.055))
+    .force("y",d3.forceY(d=>d.ty).strength(yField?0.22:0.055))
     .alphaDecay(0.011).velocityDecay(0.30)
     .on("tick",()=>dualMultiCircles.attr("cx",d=>d.x).attr("cy",d=>d.y));
   dualSim.alpha(1.0).restart();
@@ -2036,10 +2230,11 @@ function goDualMulti(leftField, leftLabel, rightField, rightLabel) {
       svg.append("text").attr("class","col-label")
         .attr("x",x).attr("y",H-48).attr("text-anchor","middle")
         .attr("fill","#4a4a4a").attr("font-size","10px").text("n="+count);
-      const lab=v.length>22?v.slice(0,20)+"\\u2026":v;
-      svg.append("text").attr("class","col-label")
-        .attr("x",x).attr("y",H-28).attr("text-anchor","middle")
-        .attr("fill","#999999").attr("font-size","11px").text(lab);
+      const vParts=wrapLabel(v);
+      const labEl=svg.append("text").attr("class","col-label")
+        .attr("x",x).attr("y",vParts.length>1?H-34:H-28).attr("text-anchor","middle")
+        .attr("fill","#999999").attr("font-size","11px");
+      vParts.forEach((p,i)=>labEl.append("tspan").attr("x",x).attr("dy",i===0?0:"1.25em").text(p));
     });
     const midLabelX=present.length>1?(xFor[present[0]]+xFor[present[present.length-1]])/2:xFor[present[0]];
     svg.append("text").attr("class","col-label")
@@ -2052,19 +2247,41 @@ function goDualMulti(leftField, leftLabel, rightField, rightLabel) {
     .attr("x1",midX).attr("x2",midX).attr("y1",20).attr("y2",H-16)
     .attr("stroke","#333").attr("stroke-width",1).attr("stroke-dasharray","4,4");
 
+  if(yFor&&yPresent){
+    const x0=pad-30, x1=W-pad+30;
+    yPresent.forEach(v=>{
+      const y=yFor[v];
+      svg.append("line").attr("class","col-label")
+        .attr("x1",x0).attr("x2",x1).attr("y1",y).attr("y2",y)
+        .attr("stroke","#1e1e1e").attr("stroke-width",1);
+      svg.append("text").attr("class","col-label")
+        .attr("x",x0-6).attr("y",y+4).attr("text-anchor","end")
+        .attr("fill","#555").attr("font-size","10px").text(v);
+    });
+  }
+
   legendEl.innerHTML="";
   const hdr=document.createElement("div");
   hdr.style.cssText="font-size:10px;color:#555;margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase";
   hdr.textContent="expected audience group";
   legendEl.appendChild(hdr);
-  GROUPS_ORDER.forEach(v=>{
-    const lc=leftVNodes.filter(d=>d._vtag===v).length;
-    const rc=rightVNodes.filter(d=>d._vtag===v).length;
-    if(!lc&&!rc) return;
-    const el=document.createElement("div"); el.className="leg-item";
-    el.innerHTML=`<div class="leg-sw" style="background:${COLORS.groups[v]||'#888'}"></div><span>${v}</span><span class="leg-pct">${lc}\\u00b7${rc}</span>`;
-    legendEl.appendChild(el);
-  });
+  if(yFor&&yPresent){
+    const ageDim=DIM_MAP[yField];
+    yPresent.slice().reverse().forEach(v=>{
+      const el=document.createElement("div"); el.className="leg-item";
+      el.innerHTML=`<div class="leg-sw" style="background:${ageDim.colors[v]||'#888'}"></div><span>${v}</span>`;
+      legendEl.appendChild(el);
+    });
+  } else {
+    GROUPS_ORDER.forEach(v=>{
+      const lc=leftVNodes.filter(d=>d._vtag===v).length;
+      const rc=rightVNodes.filter(d=>d._vtag===v).length;
+      if(!lc&&!rc) return;
+      const el=document.createElement("div"); el.className="leg-item";
+      el.innerHTML=`<div class="leg-sw" style="background:${COLORS.groups[v]||'#888'}"></div><span>${v}</span><span class="leg-pct">${lc}\\u00b7${rc}</span>`;
+      legendEl.appendChild(el);
+    });
+  }
 }
 
 // ── showQualitative / hideQualitative ─────────────────────────────────────────
@@ -2074,7 +2291,8 @@ function showQualitative() {
   qw.innerHTML="";
   qw.style.display="block";
   const piOnly=SLIDES[current]?.piOnly;
-  const quotes=RAW.filter(d=>d.t_qual&&d.t_qual.length>0&&(!piOnly||!GOG_GROUPS.has(d.survey_group)));
+  const quotes=RAW.filter(d=>d.t_qual&&d.t_qual.length>0&&(!piOnly||!GOG_GROUPS.has(d.survey_group)))
+    .sort((a,b)=>/\bprison\b/i.test(b.t_qual)-/\bprison\b/i.test(a.t_qual));
   if(!quotes.length){
     qw.innerHTML='<div style="color:#444;padding:40px;text-align:center">No responses recorded.</div>';
     return;
@@ -2127,6 +2345,31 @@ function showFilterBtns(btns) {
 }
 function hideFilterBtns() { filterBtnRow.style.display="none"; filterBtnRow.innerHTML=""; }
 
+function showCohortBtns(btns) {
+  filterBtnRow.innerHTML="";
+  filterBtnRow.style.display="flex";
+  const allBtn=document.createElement("button");
+  allBtn.className="filter-btn fb-active"; allBtn.textContent="All";
+  allBtn.addEventListener("click",()=>{
+    cohortFilter=null;
+    filterBtnRow.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("fb-active"));
+    allBtn.classList.add("fb-active");
+    const s=SLIDES[current]; go(s.group,s.color||null,s.yField||null);
+  });
+  filterBtnRow.appendChild(allBtn);
+  btns.forEach(btn=>{
+    const el=document.createElement("button");
+    el.className="filter-btn"; el.textContent=btn.label;
+    el.addEventListener("click",()=>{
+      cohortFilter={field:btn.field, vals:new Set(btn.vals)};
+      filterBtnRow.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("fb-active"));
+      el.classList.add("fb-active");
+      const s=SLIDES[current]; go(s.group,s.color||null,s.yField||null);
+    });
+    filterBtnRow.appendChild(el);
+  });
+}
+
 // ── Column detail popup ───────────────────────────────────────────────────────
 const colDetailEl=document.getElementById("col-detail");
 function showColDetail(colVal,groupDim,effDim,pageX,pageY) {
@@ -2155,6 +2398,13 @@ function hideColDetail() { colDetailEl.style.display="none"; }
 document.addEventListener("click",e=>{ if(!colDetailEl.contains(e.target)) hideColDetail(); });
 
 // ── Column label renderer ─────────────────────────────────────────────────────
+function wrapLabel(s){
+  if(s.length<=13) return [s];
+  const mid=Math.floor(s.length/2);
+  const after=s.indexOf(' ',mid), before=s.lastIndexOf(' ',mid);
+  const cut=(after>=0&&after-mid<=mid-before)?after:before;
+  return cut>0?[s.slice(0,cut),s.slice(cut+1)]:[s];
+}
 let colState=null;
 function updateColLabels() {
   svg.selectAll(".col-label").remove();
@@ -2173,7 +2423,8 @@ function updateColLabels() {
         .attr("fill","#555").attr("font-size","10px").text(v);
     });
   }
-  const pool=(filterVal!==null)?nodes.filter(d=>d[filterField]===filterVal):nodes;
+  let pool=cohortFilter?nodes.filter(d=>cohortFilter.vals.has(d[cohortFilter.field])):nodes;
+  if(filterVal!==null) pool=pool.filter(d=>d[filterField]===filterVal);
   const validTotal=cols.filter(({val})=>val!=="\\u2014").reduce((s,{val})=>s+pool.filter(d=>d[dim.field]===val).length,0);
   const spacing=cols.length>1?Math.abs(cols[1].x-cols[0].x):120;
   cols.forEach(({val,x})=>{
@@ -2187,16 +2438,29 @@ function updateColLabels() {
     svg.append("text").attr("class","col-label")
       .attr("x",x).attr("y",H-48).attr("text-anchor","middle")
       .attr("fill","#4a4a4a").attr("font-size","10px").text("n="+count);
-    svg.append("text").attr("class","col-label")
-      .attr("x",x).attr("y",H-28).attr("text-anchor","middle")
-      .attr("fill","#999999").attr("font-size","12px").style("cursor","pointer")
-      .text(sl(val));
+    const parts=wrapLabel(sl(val));
+    const labelEl=svg.append("text").attr("class","col-label")
+      .attr("x",x).attr("y",parts.length>1?H-34:H-28).attr("text-anchor","middle")
+      .attr("fill","#999999").attr("font-size","12px").style("cursor","pointer");
+    parts.forEach((p,i)=>labelEl.append("tspan").attr("x",x).attr("dy",i===0?0:"1.25em").text(p));
     svg.append("rect").attr("class","col-label")
       .attr("x",x-spacing*0.44).attr("y",H-96)
-      .attr("width",spacing*0.88).attr("height",80)
+      .attr("width",spacing*0.88).attr("height",92)
       .attr("fill","transparent").style("cursor","pointer")
       .on("click",event=>{ event.stopPropagation(); showColDetail(val,dim,colState.yKey?DIM_MAP[colState.yKey]:(eff||dim),event.pageX,event.pageY); });
   });
+  // Sub-labels for rating scales
+  if(["cold_rate","pi_rate","brk_pi_rate"].includes(dim.key)&&cols.length>1){
+    const c1=cols.find(c=>c.val==="1"), c5=cols.find(c=>c.val==="5");
+    if(c1) svg.append("text").attr("class","col-label")
+      .attr("x",c1.x).attr("y",H-6).attr("text-anchor","middle")
+      .attr("fill","#555").attr("font-size","9px").attr("letter-spacing","0.04em")
+      .text("not likely at all to attend");
+    if(c5) svg.append("text").attr("class","col-label")
+      .attr("x",c5.x).attr("y",H-6).attr("text-anchor","middle")
+      .attr("fill","#555").attr("font-size","9px").attr("letter-spacing","0.04em")
+      .text("very likely to attend");
+  }
   // Direction hint for ordered scales
   if(dim.key==="reaction"&&cols.length>1){
     const x0=cols[0].x, x1=cols[cols.length-1].x, y=H-82;
@@ -2225,7 +2489,8 @@ function go(gKey,cKey,yKey) {
   groupKey=gKey; colorKey=cKey||null;
   if(!W) return;
   const piOnly=SLIDES[current]?.piOnly;
-  const pool=piOnly?nodes.filter(d=>!GOG_GROUPS.has(d.survey_group)):nodes;
+  let pool=piOnly?nodes.filter(d=>!GOG_GROUPS.has(d.survey_group)):nodes;
+  if(cohortFilter) pool=pool.filter(d=>cohortFilter.vals.has(d[cohortFilter.field]));
   const dim=DIM_MAP[gKey];
   const present=dim.order.filter(v=>pool.some(d=>d[dim.field]===String(v)));
   const leftPad=yKey?68:55, rightPad=55, usable=W-leftPad-rightPad;
@@ -2237,20 +2502,42 @@ function go(gKey,cKey,yKey) {
     const yDim=DIM_MAP[yKey];
     yPresent=yDim.order.filter(v=>!Y_OMIT.has(v)&&pool.some(d=>d[yDim.field]===v)).reverse();
     const ny=yPresent.length;
-    yFor=Object.fromEntries(yPresent.map((v,i)=>[v,ny===1?(yTop+yBottom)/2:yTop+(i/(ny-1))*(yBottom-yTop)]));
+    const step=ny>1?Math.min(90,(yBottom-yTop)/(ny-1)):0;
+    const cy=(yTop+yBottom)/2;
+    yFor=Object.fromEntries(yPresent.map((v,i)=>[v,ny===1?cy:cy-step*(ny-1)/2+i*step]));
   }
+  const parkX=W-72, parkY=yFor?Object.values(yFor).reduce((a,b)=>a+b,0)/Object.keys(yFor).length:H*.44;
   nodes.forEach(d=>{
     const gog=piOnly&&GOG_GROUPS.has(d.survey_group);
-    d.tx=gog?-200:(xFor[d[dim.field]]??leftPad+usable/2);
-    d.ty=gog?H*.44:(yFor?(yFor[d[DIM_MAP[yKey].field]]??H*.44):H*.44);
+    const parked=!gog&&cohortFilter&&!cohortFilter.vals.has(d[cohortFilter.field]);
+    d._parked=parked;
+    d.tx=gog?-200:parked?parkX:(xFor[d[dim.field]]??leftPad+usable/2);
+    d.ty=gog?H*.44:parked?parkY:(yFor?(yFor[d[DIM_MAP[yKey].field]]??H*.44):H*.44);
   });
   const eff=DIM_MAP[colorKey]||dim;
   sim.force("x").x(d=>d.tx).strength(0.09);
   sim.force("y").y(d=>d.ty).strength(yKey?0.22:0.055);
   sim.alpha(1.0).restart();
   circles.transition().duration(1100).ease(d3.easeCubicInOut)
-    .attr("fill",d=>eff.colors[d[eff.field]]||"#888")
-    .attr("fill-opacity",d=>(piOnly&&GOG_GROUPS.has(d.survey_group))?0:0.88);
+    .attr("fill",d=>d._parked?"#444":(eff.colors[d[eff.field]]||"#888"))
+    .attr("fill-opacity",d=>(piOnly&&GOG_GROUPS.has(d.survey_group))?0:d._parked?0.45:0.88);
+  // Parked-cohort annotation box
+  svg.selectAll(".park-box").remove();
+  if(nodes.some(d=>d._parked)){
+    const bw=84,bh=52,bx=parkX-bw/2,by=parkY-bh/2-4;
+    svg.append("rect").attr("class","park-box col-label")
+      .attr("x",bx).attr("y",by).attr("width",bw).attr("height",bh)
+      .attr("rx",6).attr("fill","none")
+      .attr("stroke","#333").attr("stroke-width",1).attr("stroke-dasharray","4,3");
+    svg.append("text").attr("class","park-box col-label")
+      .attr("x",parkX).attr("y",by+bh+13).attr("text-anchor","middle")
+      .attr("fill","#444").attr("font-size","9px")
+      .text("Glow or Go results");
+    svg.append("text").attr("class","park-box col-label")
+      .attr("x",parkX).attr("y",by+bh+24).attr("text-anchor","middle")
+      .attr("fill","#444").attr("font-size","9px")
+      .text("\\u2014 more on this later");
+  }
   colState={cols:present.map((v,i)=>({val:String(v),x:present.length===1?leftPad+usable/2:leftPad+(i/(present.length-1))*usable})),dim,eff,yFor,yPresent,yKey};
   updateColLabels();
   renderLegend(eff);
@@ -2385,7 +2672,7 @@ let current=0;
 const TOTAL=SLIDES.length;
 
 function showSlide(idx) {
-  filterField=null; filterVal=null;
+  filterField=null; filterVal=null; cohortFilter=null;
   current=Math.max(0,Math.min(TOTAL-1,idx));
   const s=SLIDES[current];
   document.getElementById("slide-num").textContent=`${current+1} / ${TOTAL}`;
@@ -2394,6 +2681,7 @@ function showSlide(idx) {
   if(dualSim) teardownDual();
   if(multiSim) teardownMulti();
   hideColDetail();
+  if(s.cohort) cohortFilter={field:s.cohort.field, vals:new Set(s.cohort.vals)};
 
   const tw=document.getElementById("text-wrap");
   const ew=document.getElementById("explore-wrap");
@@ -2416,12 +2704,18 @@ function showSlide(idx) {
       ["slide-title","slide-sub","slide-body"].forEach(id=>{document.getElementById(id).style.opacity="1";});
     },280);
 
-    if(s.qualitative) {
+    if(s.textOnly) {
+      document.getElementById("chart").style.display="none";
+      const qw=document.getElementById("qual-wrap");
+      qw.innerHTML=s.textOnly; qw.style.display="block";
+    } else if(s.qualitative) {
       showQualitative();
     } else if(s.dualMulti) {
-      goDualMulti(s.dualMulti.left,s.dualMulti.leftLabel,s.dualMulti.right,s.dualMulti.rightLabel);
+      goDualMulti(s.dualMulti.left,s.dualMulti.leftLabel,s.dualMulti.right,s.dualMulti.rightLabel,s.dualMulti.yField||null);
     } else if(s.multi) {
       goMultiField(s.multi.field,s.multi.order,s.multi.colors,s.multi.yField||null,s.multi.yOrder||null);
+    } else if(s.priceRows) {
+      goPriceRows();
     } else if(s.dual) {
       goDual(s.dual.left,s.dual.leftLabel,s.dual.right,s.dual.rightLabel,
              s.dual.filterField||null,s.dual.vals||null,s.dual.colors||null);
@@ -2431,7 +2725,9 @@ function showSlide(idx) {
       idle(s.color||null);
     }
 
-    if(s.filterBtns) showFilterBtns(s.filterBtns); else hideFilterBtns();
+    if(s.cohortBtns) showCohortBtns(s.cohortBtns);
+    else if(s.filterBtns) showFilterBtns(s.filterBtns);
+    else hideFilterBtns();
     if(s.hideLegend) legendEl.innerHTML="";
   }
 
@@ -2462,13 +2758,17 @@ document.addEventListener("keydown",e=>{
 window.addEventListener("resize",()=>{
   initChart();
   const s=SLIDES[current];
-  if(s.qualitative){showQualitative();return;}
-  if(s.dualMulti) goDualMulti(s.dualMulti.left,s.dualMulti.leftLabel,s.dualMulti.right,s.dualMulti.rightLabel);
+  if(s.textOnly||s.qualitative){showSlide(current);return;}
+  if(s.dualMulti) goDualMulti(s.dualMulti.left,s.dualMulti.leftLabel,s.dualMulti.right,s.dualMulti.rightLabel,s.dualMulti.yField||null);
   else if(s.multi) goMultiField(s.multi.field,s.multi.order,s.multi.colors,s.multi.yField||null,s.multi.yOrder||null);
+  else if(s.priceRows) goPriceRows();
   else if(s.dual)  goDual(s.dual.left,s.dual.leftLabel,s.dual.right,s.dual.rightLabel,s.dual.filterField||null,s.dual.vals||null,s.dual.colors||null);
   else if(s.group) go(s.group,s.color||null,s.yField||null);
   else             idle(s.color||null);
-  if(s.filterBtns) showFilterBtns(s.filterBtns);
+  if(s.cohort) cohortFilter={field:s.cohort.field,vals:new Set(s.cohort.vals)};
+  if(s.cohortBtns) showCohortBtns(s.cohortBtns);
+  else if(s.filterBtns) showFilterBtns(s.filterBtns);
+  else hideFilterBtns();
 });
 setInterval(()=>{if(!groupKey&&!multiSim&&sim.alpha()<0.04) sim.alpha(0.1).restart();},4500);
 
@@ -2545,8 +2845,57 @@ def show_new_presentation(fdf):
         if pd.notna(row.iloc[13]) and is_num(row.iloc[13]): return "BRK-vs-GoG"
         return "—"
 
+    def cold_rate_val(row, group):
+        if group == "PI-first":               return first_rate(row, 7)
+        if group == "BRK-first":              return first_rate(row, 9)
+        if group == "GoG-first":              return first_rate(row, 11)
+        if group == "BRK-vs-GoG":             return first_rate(row, 13)
+        return None
+
+    def first_event_val(group):
+        if group == "PI-first":               return "Prison Island"
+        if group in ("BRK-first","BRK-vs-GoG"): return "BRKThrough"
+        if group == "GoG-first":              return "Glow or Go"
+        return "—"
+
+    PI_TO_H2H = {
+        "BRKThrough is much better":       "much prefer Breakthrough",
+        "BRKThrough is slightly better":   "slightly prefer Breakthrough",
+        "They're about the same":          "about the same",
+        "Prison Island is slightly better":"slightly prefer Prison Island / GoG",
+        "Prison Island is much better":    "much prefer Prison Island / GoG",
+    }
+    GOG_TO_H2H = {
+        "BRKThrough is much better":    "much prefer Breakthrough",
+        "BRKThrough is slightly better":"slightly prefer Breakthrough",
+        "They're about the same":       "about the same",
+        "Glow or Go is slightly better":"slightly prefer Prison Island / GoG",
+        "Glow or Go is much better":    "much prefer Prison Island / GoG",
+    }
+
+    def h2h_val(row, sg):
+        if sg in ("PI-first", "BRK-first"):
+            raw = first_clean(row, 15, 16)
+            return PI_TO_H2H.get(raw, "—") if raw else "—"
+        if sg in ("GoG-first", "BRK-vs-GoG"):
+            raw = first_clean(row, 17, 18)
+            return GOG_TO_H2H.get(raw, "—") if raw else "—"
+        return "—"
+
+    def study_val(sg):
+        if sg in ("PI-first", "BRK-first"):    return "PI study"
+        if sg in ("GoG-first", "BRK-vs-GoG"):  return "GoG study"
+        return "—"
+
     def crowd_pick_val(row):
         v = first_clean(row, 19)
+        return v if v else "—"
+
+    def crowd_unified_val(row, sg):
+        if sg in ("PI-first", "BRK-first"):
+            v = first_clean(row, 19)
+        else:
+            v = first_clean(row, 20)
         return v if v else "—"
 
     def tqual_val(row):
@@ -2557,6 +2906,7 @@ def show_new_presentation(fdf):
 
     records = []
     for _, row in fdf.iterrows():
+        sg = survey_group_val(row)
         records.append({
             "age":              clean(row.iloc[3]) or "Unknown",
             "city":             str(row["_city"]),
@@ -2567,11 +2917,18 @@ def show_new_presentation(fdf):
             "formats":          split_multi(row, 0),
             "reaction":         reaction_val(row),
             "crowd_pick":       crowd_pick_val(row),
-            "survey_group":     survey_group_val(row),
+            "crowd_unified":    crowd_unified_val(row, sg),
+            "survey_group":     sg,
+            "cold_rate":        cold_rate_val(row, sg),
+            "first_event":      first_event_val(sg),
+            "h2h":              h2h_val(row, sg),
+            "study":            study_val(sg),
             "pi_price_bucket":  price_bucket(row, 22),
             "brk_price_bucket": price_bucket(row, 24),
+            "gog_price_bucket": price_bucket(row, 26),
             "pi_groups":        split_multi(row, 21),
             "brk_groups":       split_multi(row, 23),
+            "gog_groups":       split_multi(row, 25),
             "t_qual":           tqual_val(row),
         })
 
